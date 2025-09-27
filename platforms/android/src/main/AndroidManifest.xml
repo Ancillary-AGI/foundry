@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.foundryengine.game">
+
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- OpenGL ES features -->
+    <uses-feature android:name="android.hardware.opengles.aep" android:required="true" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="true" />
+    <uses-feature android:name="android.hardware.gamepad" android:required="false" />
+
+    <!-- Application metadata -->
+    <application
+        android:label="FoundryEngine Game"
+        android:hasCode="true"
+        android:debuggable="true"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="true"
+        android:extractNativeLibs="true">
+
+        <!-- Main activity -->
+        <activity
+            android:name=".GameActivity"
+            android:label="FoundryEngine Game"
+            android:configChanges="orientation|keyboardHidden|screenSize|screenLayout"
+            android:launchMode="singleTask"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:exported="true">
+
+            <meta-data android:name="android.app.lib_name" android:value="foundryengine" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Native activity for fallback -->
+        <activity
+            android:name="android.app.NativeActivity"
+            android:label="FoundryEngine Game"
+            android:configChanges="orientation|keyboardHidden"
+            android:launchMode="singleTask"
+            android:exported="false">
+
+            <meta-data android:name="android.app.lib_name" android:value="foundryengine" />
+        </activity>
+
+        <!-- Service for background tasks -->
+        <service
+            android:name=".GameService"
+            android:exported="false"
+            android:enabled="true" />
+
+    </application>
+
+</manifest>
