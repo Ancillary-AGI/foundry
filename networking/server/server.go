@@ -1167,6 +1167,6 @@ func main() {
 	}
 
 	// Wait for shutdown signal
-	<-s.ctx.Done()
+	<-server.ctx.Done()
 	server.Stop()
 }

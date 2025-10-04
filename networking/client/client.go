@@ -475,6 +475,12 @@ func (c *Client) handlePlayerUpdate(msg *shared.Message) {
 }
 
 func (c *Client) handleSnapshot(msg *shared.Message) {
+	// Validate message data length before accessing
+	if len(msg.Data) < 4 {
+		c.stats.errors++
+		return
+	}
+	
 	// Handle world state snapshots
 	// This would update all entities in the game world
 	fmt.Printf("📸 Received snapshot (ID: %d)\n", binary.LittleEndian.Uint32(msg.Data[0:4]))
@@ -534,10 +540,17 @@ func (c *Client) handlePlayerJoinedRoom(msg *shared.Message) {
 func (c *Client) handlePlayerLeftRoom(msg *shared.Message) {
 	if len(msg.Data) >= 8 {
 		playerID := binary.LittleEndian.Uint64(msg.Data)
+		
+		// Get player name before deleting
+		var playerName string
+		if player, exists := c.roomPlayers[playerID]; exists {
+			playerName = player.Name
+		}
+		
 		delete(c.roomPlayers, playerID)
 
-		if player, exists := c.roomPlayers[playerID]; exists {
-			fmt.Printf("⬅️ %s left the room\n", player.Name)
+		if playerName != "" {
+			fmt.Printf("⬅️ %s left the room\n", playerName)
 		}
 	}
 }

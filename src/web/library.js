@@ -282,18 +282,39 @@ mergeInto(LibraryManager.library, {
     // Log debug message
     logDebug: function(message) {
       if (this.debugMode) {
-        console.log('[FoundryEngine Debug] ' + message);
+        // Sanitize message to prevent XSS
+        const sanitizedMessage = this.sanitizeString(message);
+        console.log('[FoundryEngine Debug] ' + sanitizedMessage);
       }
     },
 
     // Log error message
     logError: function(message) {
-      console.error('[FoundryEngine Error] ' + message);
+      // Sanitize message to prevent XSS
+      const sanitizedMessage = this.sanitizeString(message);
+      console.error('[FoundryEngine Error] ' + sanitizedMessage);
     },
 
     // Log warning message
     logWarning: function(message) {
-      console.warn('[FoundryEngine Warning] ' + message);
+      // Sanitize message to prevent XSS
+      const sanitizedMessage = this.sanitizeString(message);
+      console.warn('[FoundryEngine Warning] ' + sanitizedMessage);
+    },
+
+    // Sanitize string to prevent XSS
+    sanitizeString: function(str) {
+      if (typeof str !== 'string') return '';
+      return str.replace(/[<>"'&]/g, function(match) {
+        const escapeMap = {
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#x27;',
+          '&': '&amp;'
+        };
+        return escapeMap[match];
+      });
     }
   },
 
@@ -702,9 +723,9 @@ mergeInto(LibraryManager.library, {
   },
 
   foundry_engine_push_notification_show: function(titlePtr, bodyPtr, iconPtr) {
-    const title = UTF8ToString(titlePtr);
-    const body = UTF8ToString(bodyPtr);
-    const icon = UTF8ToString(iconPtr);
+    const title = FOUNDRY_ENGINE_WEB.sanitizeString(UTF8ToString(titlePtr));
+    const body = FOUNDRY_ENGINE_WEB.sanitizeString(UTF8ToString(bodyPtr));
+    const icon = FOUNDRY_ENGINE_WEB.sanitizeString(UTF8ToString(iconPtr));
 
     if ('Notification' in window && Notification.permission === 'granted') {
       const options = {

@@ -18,6 +18,7 @@
 #include <memory>
 #include <chrono>
 #include <thread>
+#include <random>
 
 // Link required libraries
 #pragma comment(lib, "d3d11.lib")
@@ -655,13 +656,38 @@ public:
     WindowsAudioContext(IXAudio2* xaudio2, IXAudio2MasteringVoice* masteringVoice)
         : xaudio2_(xaudio2), masteringVoice_(masteringVoice) {}
 
-    std::unique_ptr<PlatformAudioBuffer> createBuffer(unsigned int channels, unsigned int length, float sampleRate) override;
-    std::unique_ptr<PlatformAudioBufferSource> createBufferSource() override;
-    std::unique_ptr<PlatformGainNode> createGain() override;
-    PlatformAudioDestination* getDestination() override;
+    std::unique_ptr<PlatformAudioBuffer> createBuffer(unsigned int channels, unsigned int length, float sampleRate) override {
+        // Create audio buffer implementation
+        return nullptr;
+    }
 
-    float getCurrentTime() override;
-    float getSampleRate() override;
+    std::unique_ptr<PlatformAudioBufferSource> createBufferSource() override {
+        // Create buffer source implementation
+        return nullptr;
+    }
+
+    std::unique_ptr<PlatformGainNode> createGain() override {
+        // Create gain node implementation
+        return nullptr;
+    }
+
+    PlatformAudioDestination* getDestination() override {
+        // Return audio destination implementation
+        return nullptr;
+    }
+
+    float getCurrentTime() override {
+        if (xaudio2_) {
+            XAUDIO2_PERFORMANCE_DATA perfData;
+            xaudio2_->GetPerformanceData(&perfData);
+            return static_cast<float>(perfData.AudioBytes) / 44100.0f / 4.0f; // Assuming 44.1kHz stereo
+        }
+        return 0.0f;
+    }
+
+    float getSampleRate() override {
+        return 44100.0f; // Default sample rate
+    }
 };
 
 // ========== WINDOWS INPUT ==========
@@ -704,18 +730,133 @@ private:
     std::string documentsPath_;
 
 public:
-    WindowsFileSystem();
+    WindowsFileSystem() {
+        // Initialize paths
+        appDataPath_ = getAppDataPath();
+        documentsPath_ = getDocumentsPath();
+    }
 
-    std::vector<uint8_t> readFile(const std::string& path) override;
-    void writeFile(const std::string& path, const std::vector<uint8_t>& data) override;
-    void deleteFile(const std::string& path) override;
-    std::vector<std::string> listFiles(const std::string& directory) override;
-    void createDirectory(const std::string& path) override;
-    bool exists(const std::string& path) override;
+    std::vector<uint8_t> readFile(const std::string& path) override {
+        std::ifstream file(path, std::ios::binary);
+        if (!file) {
+            return {};
+        }
+
+        file.seekg(0, std::ios::end);
+        size_t size = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        std::vector<uint8_t> data(size);
+        file.read(reinterpret_cast<char*>(data.data()), size);
+        return data;
+    }
+
+    void writeFile(const std::string& path, const std::vector<uint8_t>& data) override {
+        std::ofstream file(path, std::ios::binary);
+        if (file) {
+            file.write(reinterpret_cast<const char*>(data.data()), data.size());
+        }
+    }
+
+    void deleteFile(const std::string& path) override {
+        DeleteFileA(path.c_str());
+    }
+
+    std::vector<std::string> listFiles(const std::string& directory) override {
+        std::vector<std::string> files;
+        std::string searchPath = directory + "\\*";
+
+        WIN32_FIND_DATAA findData;
+        HANDLE findHandle = FindFirstFileA(searchPath.c_str(), &findData);
+
+        if (findHandle != INVALID_HANDLE_VALUE) {
+            do {
+                if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                    files.push_back(findData.cFileName);
+                }
+            } while (FindNextFileA(findHandle, &findData));
+            FindClose(findHandle);
+        }
+
+        return files;
+    }
+
+    void createDirectory(const std::string& path) override {
+        CreateDirectoryA(path.c_str(), nullptr);
+    }
+
+    bool exists(const std::string& path) override {
+        DWORD attributes = GetFileAttributesA(path.c_str());
+        return attributes != INVALID_FILE_ATTRIBUTES;
+    }
 
 private:
-    std::string getAppDataPath();
-    std::string getDocumentsPath();
+    std::string getAppDataPath() {
+        char path[MAX_PATH];
+        if (SUCCEEDED(SHGetFolderPathA(nullptr, CSIDL_APPDATA, nullptr, 0, path))) {
+            return std::string(path) + "\\FoundryEngine";
+        }
+        return ".\\data";
+    }
+
+    std::string getDocumentsPath() {
+        char path[MAX_PATH];
+        if (SUCCEEDED(SHGetFolderPathA(nullptr, CSIDL_MYDOCUMENTS, nullptr, 0, path))) {
+            return std::string(path) + "\\FoundryEngine";
+        }
+        return ".\\documents";
+    }
+};
+
+// ========== WINDOWS NETWORKING ==========
+class WindowsNetworking : public PlatformNetworking {
+private:
+    WSADATA wsaData_;
+    bool initialized_ = false;
+
+public:
+    WindowsNetworking() {
+        initialize();
+    }
+
+    ~WindowsNetworking() {
+        shutdown();
+    }
+
+    bool initialize() {
+        if (initialized_) return true;
+
+        int result = WSAStartup(MAKEWORD(2, 2), &wsaData_);
+        if (result != 0) {
+            return false;
+        }
+
+        initialized_ = true;
+        return true;
+    }
+
+    void shutdown() {
+        if (initialized_) {
+            WSACleanup();
+            initialized_ = false;
+        }
+    }
+
+    std::unique_ptr<PlatformWebSocket> connect(const std::string& url) override {
+        // Parse URL and create WebSocket connection
+        // For now, return nullptr as this is a placeholder
+        return nullptr;
+    }
+
+    std::vector<uint8_t> httpGet(const std::string& url) override {
+        // Implement HTTP GET using WinHTTP or similar
+        return {};
+    }
+
+    std::vector<uint8_t> httpPost(const std::string& url, const std::vector<uint8_t>& data) override {
+        // Implement HTTP POST using WinHTTP or similar
+        return {};
+    }
 };
 
 // ========== WINDOWS TIMER ==========
@@ -768,11 +909,17 @@ public:
 class WindowsRandom : public PlatformRandom {
 public:
     double random() override {
-        return static_cast<double>(rand()) / RAND_MAX;
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dis(0.0, 1.0);
+        return dis(gen);
     }
 
     int randomInt(int min, int max) override {
-        return min + (rand() % (max - min + 1));
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(min, max);
+        return dis(gen);
     }
 
     double randomFloat(double min, double max) override {
@@ -780,8 +927,11 @@ public:
     }
 
     void seed(unsigned int seed) override {
-        srand(seed);
+        generator_.seed(seed);
     }
+
+private:
+    std::mt19937 generator_;
 };
 
 // ========== WINDOWS APPLICATION ==========
@@ -790,19 +940,140 @@ private:
     WindowsPlatform* platform_;
     std::unique_ptr<GameEngine> engine_;
     bool running_ = false;
+    HINSTANCE hInstance_;
 
 public:
-    WindowsApplication(HINSTANCE hInstance);
-    ~WindowsApplication();
+    WindowsApplication(HINSTANCE hInstance) : hInstance_(hInstance) {
+        platform_ = new WindowsPlatform(hInstance);
+    }
 
-    bool initialize(int width, int height, const std::string& title);
-    void run();
-    void shutdown();
+    ~WindowsApplication() {
+        if (platform_) {
+            delete platform_;
+        }
+    }
+
+    bool initialize(int width, int height, const std::string& title) {
+        if (!platform_) return false;
+
+        if (!platform_->createWindow(width, height, title)) {
+            return false;
+        }
+
+        // Initialize game engine here if needed
+        // engine_ = std::make_unique<GameEngine>(platform_);
+
+        return true;
+    }
+
+    void run() {
+        if (!platform_) return;
+
+        running_ = true;
+
+        // Main game loop
+        while (running_ && platform_->isRunning()) {
+            // Process Windows messages
+            platform_->processMessages();
+
+            // Update game logic
+            update(16.67f); // ~60 FPS
+
+            // Render frame
+            render();
+        }
+    }
+
+    void shutdown() {
+        running_ = false;
+        platform_->destroyWindow();
+
+        // Cleanup game engine
+        if (engine_) {
+            engine_.reset();
+        }
+    }
 
 private:
-    void update(float deltaTime);
-    void render();
-    LRESULT handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    void update(float deltaTime) {
+        if (engine_) {
+            // engine_->update(deltaTime);
+        }
+
+        // Update platform systems
+        if (platform_) {
+            platform_->getInputManager()->update();
+        }
+    }
+
+    void render() {
+        if (!platform_) return;
+
+        // Get graphics context and render
+        PlatformGraphics* graphics = platform_->getGraphics();
+        if (graphics) {
+            auto context = graphics->createContext();
+            if (context) {
+                // Clear screen
+                context->clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                // Render game content here
+                // if (engine_) {
+                //     engine_->render(context.get());
+                // }
+
+                // Present frame
+                graphics->present();
+            }
+        }
+    }
+
+    LRESULT handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+        switch (uMsg) {
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            running_ = false;
+            return 0;
+
+        case WM_SIZE:
+            if (platform_) {
+                int width = LOWORD(lParam);
+                int height = HIWORD(lParam);
+                platform_->getGraphics()->resize(width, height);
+            }
+            break;
+
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+            if (platform_) {
+                WindowsInput* input = static_cast<WindowsInput*>(platform_->getInputManager());
+                if (input) {
+                    input->handleKeyMessage(uMsg, wParam, lParam);
+                }
+            }
+            break;
+
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONUP:
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONUP:
+            if (platform_) {
+                WindowsInput* input = static_cast<WindowsInput*>(platform_->getInputManager());
+                if (input) {
+                    input->handleMouseMessage(uMsg, wParam, lParam);
+                }
+            }
+            break;
+
+        case WM_CLOSE:
+            running_ = false;
+            return 0;
+        }
+
+        return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    }
 };
 
 // ========== WINDOW PROCEDURE ==========
@@ -976,6 +1247,7 @@ void WindowsInput::handleMouseMessage(UINT message, WPARAM wParam, LPARAM lParam
     case WM_RBUTTONUP: button = 2; pressed = false; break;
     case WM_MBUTTONDOWN: button = 1; pressed = true; break;
     case WM_MBUTTONUP: button = 1; pressed = false; break;
+    default: break;
     }
 
     if (button >= 0) {

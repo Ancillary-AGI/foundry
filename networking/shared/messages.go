@@ -112,6 +112,12 @@ func DeserializeMessage(data []byte) (*Message, error) {
 		return nil, err
 	}
 
+	// Validate data length to prevent memory exhaustion
+	const maxDataLen = 1024 * 1024 // 1MB maximum
+	if dataLen > maxDataLen {
+		return nil, errors.New("data too large")
+	}
+	
 	// Read data
 	if dataLen > 0 {
 		if uint32(len(data)-13) < dataLen {

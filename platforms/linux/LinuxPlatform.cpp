@@ -20,6 +20,8 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <random>
+#include <cstring>
 
 // ========== LINUX CANVAS ==========
 LinuxCanvas::LinuxCanvas(int width, int height, SDL_Window* window)
@@ -275,6 +277,9 @@ void LinuxInput::handleSDLEvent(const SDL_Event& event) {
     case SDL_CONTROLLERDEVICEREMOVED:
         handleControllerRemoved(event.cdevice.which);
         break;
+        
+    default:
+        break;
     }
 }
 
@@ -314,6 +319,11 @@ LinuxFileSystem::LinuxFileSystem() {
 }
 
 std::vector<uint8_t> LinuxFileSystem::readFile(const std::string& path) {
+    // Validate path to prevent directory traversal
+    if (path.find("..") != std::string::npos || path.find("//") != std::string::npos) {
+        return {};
+    }
+    
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
         return {};
@@ -329,6 +339,11 @@ std::vector<uint8_t> LinuxFileSystem::readFile(const std::string& path) {
 }
 
 void LinuxFileSystem::writeFile(const std::string& path, const std::vector<uint8_t>& data) {
+    // Validate path to prevent directory traversal
+    if (path.find("..") != std::string::npos || path.find("//") != std::string::npos) {
+        return;
+    }
+    
     std::ofstream file(path, std::ios::binary);
     if (file.is_open()) {
         file.write(reinterpret_cast<const char*>(data.data()), data.size());
@@ -416,11 +431,17 @@ void LinuxTimer::cancelAnimationFrame(int id) {
 
 // ========== LINUX RANDOM ==========
 double LinuxRandom::random() {
-    return static_cast<double>(rand()) / RAND_MAX;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0.0, 1.0);
+    return dis(gen);
 }
 
 int LinuxRandom::randomInt(int min, int max) {
-    return min + (rand() % (max - min + 1));
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(min, max);
+    return dis(gen);
 }
 
 double LinuxRandom::randomFloat(double min, double max) {
@@ -428,8 +449,11 @@ double LinuxRandom::randomFloat(double min, double max) {
 }
 
 void LinuxRandom::seed(unsigned int seed) {
-    srand(seed);
+    generator_.seed(seed);
 }
+
+private:
+    std::mt19937 generator_;
 
 // ========== LINUX APPLICATION ==========
 LinuxApplication::LinuxApplication() : running_(false) {
@@ -542,8 +566,16 @@ void LinuxApplication::processEvents() {
         case SDL_QUIT:
             running_ = false;
             break;
-        default:
+        case SDL_KEYDOWN:
+        case SDL_KEYUP:
+        case SDL_MOUSEBUTTONDOWN:
+        case SDL_MOUSEBUTTONUP:
+        case SDL_MOUSEMOTION:
+        case SDL_CONTROLLERDEVICEADDED:
+        case SDL_CONTROLLERDEVICEREMOVED:
             input_->handleSDLEvent(event);
+            break;
+        default:
             break;
         }
     }

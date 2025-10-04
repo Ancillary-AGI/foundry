@@ -68,8 +68,13 @@ public class GameActivity extends Activity implements SurfaceHolder.Callback {
     };
 
     static {
-        // Load native library
-        System.loadLibrary("foundryengine");
+        try {
+            // Load native library with full path for security
+            System.load(System.getProperty("java.library.path") + "/libfoundryengine.so");
+        } catch (UnsatisfiedLinkError e) {
+            // Fallback to loadLibrary if full path fails
+            System.loadLibrary("foundryengine");
+        }
     }
 
     @Override
@@ -111,7 +116,11 @@ public class GameActivity extends Activity implements SurfaceHolder.Callback {
         Log.d(TAG, "onDestroy called");
 
         if (gameInitialized) {
-            nativeOnDestroy();
+            try {
+                nativeOnDestroy();
+            } catch (Exception e) {
+                Log.e(TAG, "Error in nativeOnDestroy", e);
+            }
             gameInitialized = false;
         }
 
@@ -123,7 +132,11 @@ public class GameActivity extends Activity implements SurfaceHolder.Callback {
         Log.d(TAG, "onPause called");
 
         if (gameInitialized) {
-            nativeOnPause();
+            try {
+                nativeOnPause();
+            } catch (Exception e) {
+                Log.e(TAG, "Error in nativeOnPause", e);
+            }
         }
 
         super.onPause();
@@ -213,6 +226,8 @@ public class GameActivity extends Activity implements SurfaceHolder.Callback {
             case android.view.MotionEvent.ACTION_CANCEL:
                 // Touch cancelled
                 break;
+            default:
+                break;
         }
 
         return true;
@@ -261,6 +276,12 @@ public class GameActivity extends Activity implements SurfaceHolder.Callback {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (requestCode == PERMISSION_REQUEST_CODE) {
+            // Validate arrays are not null and have matching lengths
+            if (permissions == null || grantResults == null || permissions.length != grantResults.length) {
+                Log.e(TAG, "Invalid permission result arrays");
+                return;
+            }
+            
             boolean allGranted = true;
 
             for (int result : grantResults) {
@@ -284,8 +305,23 @@ public class GameActivity extends Activity implements SurfaceHolder.Callback {
 
     // File utilities for native code
     public static byte[] readFile(String path) {
+        // Validate path to prevent directory traversal
+        if (path == null || path.contains("..") || path.contains("//")) {
+            Log.e(TAG, "Invalid file path: " + path);
+            return new byte[0];
+        }
+        
         try {
-            java.io.InputStream inputStream = new java.io.FileInputStream(path);
+            java.io.File file = new java.io.File(path);
+            String canonicalPath = file.getCanonicalPath();
+            
+            // Ensure the canonical path is within allowed directories
+            if (!canonicalPath.startsWith("/data/data/") && !canonicalPath.startsWith("/sdcard/")) {
+                Log.e(TAG, "Path outside allowed directories: " + canonicalPath);
+                return new byte[0];
+            }
+            
+            java.io.InputStream inputStream = new java.io.FileInputStream(canonicalPath);
             java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
 
             byte[] buffer = new byte[1024];
