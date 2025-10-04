@@ -1,0 +1,58 @@
+{
+  "name": "My Foundry Game",
+  "version": "1.0.0",
+  "engineVersion": "1.0.0",
+  "description": "A sample game project created with Foundry IDE",
+  "author": "Developer",
+  "platforms": ["desktop", "web"],
+  "mainScene": "scenes/main.scene",
+  "buildSettings": {
+    "optimizationLevel": 2,
+    "debugMode": true,
+    "enableProfiling": false,
+    "outputDirectory": "build"
+  },
+  "windowSettings": {
+    "width": 1280,
+    "height": 720,
+    "title": "My Foundry Game",
+    "fullscreen": false,
+    "vsync": true
+  },
+  "renderingSettings": {
+    "renderer": "opengl",
+    "shadows": true,
+    "antiAliasing": true,
+    "hdr": false
+  },
+  "audioSettings": {
+    "masterVolume": 1.0,
+    "musicVolume": 0.8,
+    "sfxVolume": 1.0
+  },
+  "inputSettings": {
+    "mouseSensitivity": 1.0,
+    "invertMouseY": false,
+    "keyBindings": {
+      "moveForward": "W",
+      "moveBackward": "S",
+      "moveLeft": "A",
+      "moveRight": "D",
+      "jump": "Space",
+      "crouch": "Ctrl",
+      "sprint": "Shift"
+    }
+  },
+  "networkSettings": {
+    "enableNetworking": false,
+    "serverPort": 7777,
+    "maxPlayers": 16,
+    "tickRate": 60
+  },
+  "physicsSettings": {
+    "gravity": [-9.81, 0.0, 0.0],
+    "airDensity": 1.225,
+    "enableFluids": false,
+    "enableCloth": false
+  }
+}
