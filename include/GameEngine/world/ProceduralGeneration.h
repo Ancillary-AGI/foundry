@@ -501,6 +501,10 @@ public:
 
         // Memory leak detection
         struct MemoryAllocation {
+            /**
+             * @brief Address of the allocated memory block.
+             * @note Consider using smart pointers for ownership tracking.
+             */
             void* address;
             size_t size;
             std::string file;
@@ -531,7 +535,11 @@ public:
             std::string sourcePath;
             std::vector<std::string> dependencies;
             std::unordered_map<std::string, std::any> metadata;
-            void* runtimeData; // Cached processed data
+            /**
+             * @brief Cached processed data for runtime use.
+             * @note Consider using std::unique_ptr<uint8_t[]> or a type-safe variant for better safety.
+             */
+            void* runtimeData;
         };
 
         std::unordered_map<std::string, Asset> assetDatabase;

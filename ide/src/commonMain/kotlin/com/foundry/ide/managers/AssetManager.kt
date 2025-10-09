@@ -68,9 +68,18 @@ class AssetManager {
         settings: AssetImportSettings = AssetImportSettings()
     ): AssetInfo? {
         return try {
-            val sourceFile = File(sourcePath)
-            if (!sourceFile.exists()) {
-                throw IllegalArgumentException("Source file does not exist: $sourcePath")
+            // Validate paths to prevent path traversal
+            val normalizedSourcePath = Paths.get(sourcePath).normalize().toAbsolutePath()
+            val normalizedTargetPath = Paths.get(targetPath).normalize().toAbsolutePath()
+            
+            if (!isValidAssetPath(normalizedSourcePath.toString()) || 
+                !isValidAssetPath(normalizedTargetPath.toString())) {
+                return null
+            }
+            
+            val sourceFile = normalizedSourcePath.toFile()
+            if (!sourceFile.exists() || !isAllowedAssetExtension(sourceFile.extension)) {
+                return null
             }
 
             val assetType = detectAssetType(sourceFile)
@@ -206,11 +215,17 @@ class AssetManager {
         targetPath: String,
         settings: AssetImportSettings
     ): AssetInfo {
+        // Validate target path
+        val normalizedTargetPath = Paths.get(targetPath).normalize().toAbsolutePath()
+        if (!isValidAssetPath(normalizedTargetPath.toString())) {
+            throw SecurityException("Invalid target path")
+        }
+        
         // In a real implementation, this would use assimp or similar library
         // For now, just copy the file
-        val targetFile = File(targetPath)
+        val targetFile = normalizedTargetPath.toFile()
         Files.createDirectories(targetFile.parentFile.toPath())
-        Files.copy(sourceFile.toPath(), targetFile.toPath())
+        Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
 
         return AssetInfo(
             id = generateAssetId(sourceFile, AssetType.MESH),
@@ -237,9 +252,14 @@ class AssetManager {
         targetPath: String,
         settings: AssetImportSettings
     ): AssetInfo {
-        val targetFile = File(targetPath)
+        val normalizedTargetPath = Paths.get(targetPath).normalize().toAbsolutePath()
+        if (!isValidAssetPath(normalizedTargetPath.toString())) {
+            throw SecurityException("Invalid target path")
+        }
+        
+        val targetFile = normalizedTargetPath.toFile()
         Files.createDirectories(targetFile.parentFile.toPath())
-        Files.copy(sourceFile.toPath(), targetFile.toPath())
+        Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
 
         return AssetInfo(
             id = generateAssetId(sourceFile, AssetType.TEXTURE),
@@ -267,9 +287,14 @@ class AssetManager {
         targetPath: String,
         settings: AssetImportSettings
     ): AssetInfo {
-        val targetFile = File(targetPath)
+        val normalizedTargetPath = Paths.get(targetPath).normalize().toAbsolutePath()
+        if (!isValidAssetPath(normalizedTargetPath.toString())) {
+            throw SecurityException("Invalid target path")
+        }
+        
+        val targetFile = normalizedTargetPath.toFile()
         Files.createDirectories(targetFile.parentFile.toPath())
-        Files.copy(sourceFile.toPath(), targetFile.toPath())
+        Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
 
         return AssetInfo(
             id = generateAssetId(sourceFile, AssetType.AUDIO),
@@ -297,9 +322,14 @@ class AssetManager {
         targetPath: String,
         settings: AssetImportSettings
     ): AssetInfo {
-        val targetFile = File(targetPath)
+        val normalizedTargetPath = Paths.get(targetPath).normalize().toAbsolutePath()
+        if (!isValidAssetPath(normalizedTargetPath.toString())) {
+            throw SecurityException("Invalid target path")
+        }
+        
+        val targetFile = normalizedTargetPath.toFile()
         Files.createDirectories(targetFile.parentFile.toPath())
-        Files.copy(sourceFile.toPath(), targetFile.toPath())
+        Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
 
         return AssetInfo(
             id = generateAssetId(sourceFile, AssetType.SCRIPT),
@@ -327,9 +357,14 @@ class AssetManager {
         type: AssetType,
         settings: AssetImportSettings
     ): AssetInfo {
-        val targetFile = File(targetPath)
+        val normalizedTargetPath = Paths.get(targetPath).normalize().toAbsolutePath()
+        if (!isValidAssetPath(normalizedTargetPath.toString())) {
+            throw SecurityException("Invalid target path")
+        }
+        
+        val targetFile = normalizedTargetPath.toFile()
         Files.createDirectories(targetFile.parentFile.toPath())
-        Files.copy(sourceFile.toPath(), targetFile.toPath())
+        Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
 
         return AssetInfo(
             id = generateAssetId(sourceFile, type),
@@ -459,5 +494,30 @@ class AssetManager {
         fun stop() {
             watcherJob?.cancel()
         }
+    }
+    
+    /**
+     * Validate asset path to prevent path traversal
+     */
+    private fun isValidAssetPath(path: String): Boolean {
+        val normalizedPath = Paths.get(path).normalize().toAbsolutePath().toString()
+        return !normalizedPath.contains("..") && 
+               !normalizedPath.startsWith("/etc") &&
+               !normalizedPath.startsWith("/proc") &&
+               !normalizedPath.startsWith("/sys")
+    }
+    
+    /**
+     * Check if asset extension is allowed
+     */
+    private fun isAllowedAssetExtension(extension: String): Boolean {
+        val allowedExtensions = setOf(
+            "obj", "fbx", "gltf", "dae", "3ds", // Mesh
+            "png", "jpg", "jpeg", "tga", "bmp", "tiff", // Texture
+            "wav", "mp3", "ogg", "flac", // Audio
+            "kt", "java", "cpp", "h", "glsl", // Script
+            "mat", "shader", "scene", "prefab" // Other
+        )
+        return extension.lowercase() in allowedExtensions
     }
 }

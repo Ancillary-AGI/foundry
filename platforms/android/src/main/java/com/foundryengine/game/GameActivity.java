@@ -418,6 +418,9 @@ public class GameActivity extends Activity implements SurfaceHolder.Callback {
             case TRIM_MEMORY_COMPLETE:
                 Log.i(TAG, "Memory complete");
                 break;
+            default:
+                Log.w(TAG, "Unknown memory trim level: " + level);
+                break;
         }
 
         if (gameInitialized) {

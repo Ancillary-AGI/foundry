@@ -279,6 +279,21 @@ mergeInto(LibraryManager.library, {
       this.debugMode = debug;
     },
 
+    // Sanitize string to prevent XSS
+    sanitizeString: function(str) {
+      if (typeof str !== 'string') return '';
+      return str.replace(/[<>"'&]/g, function(match) {
+        const escapeMap = {
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#x27;',
+          '&': '&amp;'
+        };
+        return escapeMap[match];
+      });
+    },
+
     // Log debug message
     logDebug: function(message) {
       if (this.debugMode) {
@@ -300,21 +315,6 @@ mergeInto(LibraryManager.library, {
       // Sanitize message to prevent XSS
       const sanitizedMessage = this.sanitizeString(message);
       console.warn('[FoundryEngine Warning] ' + sanitizedMessage);
-    },
-
-    // Sanitize string to prevent XSS
-    sanitizeString: function(str) {
-      if (typeof str !== 'string') return '';
-      return str.replace(/[<>"'&]/g, function(match) {
-        const escapeMap = {
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#x27;',
-          '&': '&amp;'
-        };
-        return escapeMap[match];
-      });
     }
   },
 

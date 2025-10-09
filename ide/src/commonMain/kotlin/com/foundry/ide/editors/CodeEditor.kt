@@ -77,8 +77,14 @@ class CodeEditor {
      */
     fun openDocument(filePath: String): EditorDocument? {
         return try {
-            val file = File(filePath)
-            if (!file.exists()) {
+            // Validate file path to prevent path traversal
+            val normalizedPath = Paths.get(filePath).normalize().toAbsolutePath()
+            if (!isValidFilePath(normalizedPath.toString())) {
+                return null
+            }
+            
+            val file = normalizedPath.toFile()
+            if (!file.exists() || !isAllowedFileExtension(file.extension)) {
                 return null
             }
 
@@ -153,8 +159,14 @@ class CodeEditor {
     fun saveDocument(filePath: String): Boolean {
         return try {
             val document = openDocuments[filePath] ?: return false
+            
+            // Validate file path to prevent path traversal
+            val normalizedPath = Paths.get(filePath).normalize().toAbsolutePath()
+            if (!isValidFilePath(normalizedPath.toString())) {
+                return false
+            }
 
-            Files.writeString(Paths.get(filePath), document.content)
+            Files.writeString(normalizedPath, document.content)
 
             val updatedDocument = document.copy(isDirty = false)
             openDocuments[filePath] = updatedDocument
@@ -463,8 +475,10 @@ class CodeEditor {
      * Get breakpoints file path
      */
     private fun getBreakpointsFile(filePath: String): File {
-        val file = File(filePath)
-        return File(file.parentFile, ".foundry/${file.name}.breakpoints")
+        val normalizedPath = Paths.get(filePath).normalize().toAbsolutePath()
+        val file = normalizedPath.toFile()
+        val breakpointsDir = File(file.parentFile, ".foundry")
+        return File(breakpointsDir, "${file.name}.breakpoints")
     }
 
     /**
@@ -672,6 +686,29 @@ class CodeEditor {
         }
 
         return completions
+    }
+
+    /**
+     * Validate file path to prevent path traversal
+     */
+    private fun isValidFilePath(filePath: String): Boolean {
+        val normalizedPath = Paths.get(filePath).normalize().toAbsolutePath().toString()
+        return !normalizedPath.contains("..") && 
+               !normalizedPath.startsWith("/etc") &&
+               !normalizedPath.startsWith("/proc") &&
+               !normalizedPath.startsWith("/sys")
+    }
+    
+    /**
+     * Check if file extension is allowed
+     */
+    private fun isAllowedFileExtension(extension: String): Boolean {
+        val allowedExtensions = setOf(
+            "kt", "java", "cpp", "cc", "cxx", "h", "hpp", "c",
+            "glsl", "vert", "frag", "json", "xml", "md", "txt",
+            "gradle", "kts", "properties", "yml", "yaml"
+        )
+        return extension.lowercase() in allowedExtensions
     }
 
     /**

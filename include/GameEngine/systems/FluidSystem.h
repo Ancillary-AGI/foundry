@@ -417,6 +417,9 @@ public:
                     }
                     break;
                 }
+                default:
+                    // Unknown boundary type; consider logging or asserting here
+                    break;
             }
         }
     }

@@ -101,7 +101,11 @@ class PluginManager {
      */
     fun loadPlugin(pluginFile: File): PluginLoadResult {
         return try {
-            if (!pluginFile.exists() || !pluginFile.name.endsWith(".jar")) {
+            // Validate file path to prevent path traversal
+            val normalizedPath = pluginFile.toPath().normalize().toAbsolutePath()
+            if (!isValidPluginPath(normalizedPath.toString()) || 
+                !pluginFile.exists() || 
+                !isAllowedPluginExtension(pluginFile.extension)) {
                 return PluginLoadResult.Failure("Invalid plugin file: ${pluginFile.name}")
             }
 
@@ -265,8 +269,19 @@ class PluginManager {
      */
     fun installPluginFromUrl(url: String, targetFileName: String? = null): PluginLoadResult {
         return try {
+            // Validate URL to prevent malicious downloads
+            if (!isValidPluginUrl(url)) {
+                return PluginLoadResult.Failure("Invalid plugin URL")
+            }
+            
             val pluginUrl = URL(url)
             val fileName = targetFileName ?: File(pluginUrl.path).name
+            
+            // Validate filename to prevent path traversal
+            if (!isValidPluginFileName(fileName)) {
+                return PluginLoadResult.Failure("Invalid plugin filename")
+            }
+            
             val targetFile = pluginsDir.resolve(fileName).toFile()
 
             // Download plugin
@@ -357,6 +372,11 @@ class PluginManager {
      */
     private fun loadPluginClass(pluginFile: File, mainClass: String): Class<*>? {
         return try {
+            // Validate main class name to prevent code injection
+            if (!isValidClassName(mainClass)) {
+                return null
+            }
+            
             val jarUrl = pluginFile.toURI().toURL()
             val classLoader = URLClassLoader(arrayOf(jarUrl), this::class.java.classLoader)
             pluginClassLoaders[File(pluginFile).nameWithoutExtension] = classLoader
@@ -538,6 +558,53 @@ class PluginManager {
                 }
             }
         }
+    }
+
+    /**
+     * Validate plugin path to prevent path traversal
+     */
+    private fun isValidPluginPath(path: String): Boolean {
+        val normalizedPath = Paths.get(path).normalize().toAbsolutePath().toString()
+        return !normalizedPath.contains("..") && 
+               normalizedPath.startsWith(pluginsDir.toAbsolutePath().toString())
+    }
+    
+    /**
+     * Check if plugin extension is allowed
+     */
+    private fun isAllowedPluginExtension(extension: String): Boolean {
+        return extension.lowercase() == "jar"
+    }
+    
+    /**
+     * Validate class name to prevent code injection
+     */
+    private fun isValidClassName(className: String): Boolean {
+        return className.matches(Regex("^[a-zA-Z_][a-zA-Z0-9_.]*$")) &&
+               !className.contains("..")
+    }
+    
+    /**
+     * Validate plugin URL
+     */
+    private fun isValidPluginUrl(url: String): Boolean {
+        return try {
+            val parsedUrl = URL(url)
+            parsedUrl.protocol in setOf("http", "https") &&
+            !parsedUrl.host.isNullOrBlank()
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    /**
+     * Validate plugin filename
+     */
+    private fun isValidPluginFileName(fileName: String): Boolean {
+        return !fileName.contains("..") &&
+               !fileName.contains("/") &&
+               !fileName.contains("\\") &&
+               fileName.endsWith(".jar")
     }
 
     /**

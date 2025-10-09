@@ -134,6 +134,9 @@ public:
                     p.frictionCoeff = 0.02f;
                 }
                 break;
+            default:
+                // Unknown material type; consider logging or asserting here
+                break;
         }
     }
 

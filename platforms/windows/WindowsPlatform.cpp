@@ -458,6 +458,9 @@ public:
         case GL_BLEND:
             // Enable blending
             break;
+        default:
+            // Unknown capability
+            break;
         }
     }
 
@@ -1070,6 +1073,10 @@ private:
         case WM_CLOSE:
             running_ = false;
             return 0;
+
+        default:
+            // Unhandled message; fall through to DefWindowProc
+            break;
         }
 
         return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -1247,7 +1254,7 @@ void WindowsInput::handleMouseMessage(UINT message, WPARAM wParam, LPARAM lParam
     case WM_RBUTTONUP: button = 2; pressed = false; break;
     case WM_MBUTTONDOWN: button = 1; pressed = true; break;
     case WM_MBUTTONUP: button = 1; pressed = false; break;
-    default: break;
+    default: return; // Add default case
     }
 
     if (button >= 0) {

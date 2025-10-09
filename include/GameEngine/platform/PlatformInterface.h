@@ -137,8 +137,16 @@ struct PlatformConfig {
 // Platform initialization parameters
 struct PlatformInitParams {
     PlatformConfig config;
-    void* nativeWindowHandle; // Platform-specific window handle
-    void* nativeAppHandle;    // Platform-specific app handle
+    /**
+     * @brief Platform-specific window handle.
+     * @note void* is used for cross-platform abstraction. Prefer type-safe wrappers if possible.
+     */
+    void* nativeWindowHandle;
+    /**
+     * @brief Platform-specific app handle.
+     * @note void* is used for cross-platform abstraction. Prefer type-safe wrappers if possible.
+     */
+    void* nativeAppHandle;
     std::unordered_map<std::string, std::string> customParams;
 };
 
@@ -182,7 +190,11 @@ struct PlatformEvent {
     PlatformEventType type;
     std::chrono::steady_clock::time_point timestamp;
     std::unordered_map<std::string, std::string> data;
-    void* platformData; // Platform-specific event data
+    /**
+     * @brief Platform-specific event data.
+     * @note void* is used for cross-platform abstraction. Prefer type-safe wrappers if possible.
+     */
+    void* platformData;
 };
 
 // Platform event callback
