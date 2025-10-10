@@ -29,6 +29,15 @@ set(TEST_SOURCES
     TestSerializationSystem.cpp
     TestPlatformInterface.cpp
     TestCoreSystems.cpp
+    TestGraphicsSystems.cpp
+    TestPhysicsSystems.cpp
+    TestMathSystems.cpp
+    TestAISystems.cpp
+    TestAnimationSystems.cpp
+    TestNetworkSystems.cpp
+    TestPlatformSystems.cpp
+    TestOptimizationSystems.cpp
+    TestWorldSystems.cpp
 )
 
 # Engine source files needed for tests
