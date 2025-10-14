@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_RASTERIZER_H
-#define NEUTRAL_GAMEENGINE_RASTERIZER_H
+#ifndef FOUNDRY_GAMEENGINE_RASTERIZER_H
+#define FOUNDRY_GAMEENGINE_RASTERIZER_H
 
 #include <vector>
 #include "../../core/System.h"
@@ -144,4 +144,4 @@ private:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_RASTERIZER_H
+#endif // FOUNDRY_GAMEENGINE_RASTERIZER_H

@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_DECISION_TREE_H
-#define NEUTRAL_GAMEENGINE_DECISION_TREE_H
+#ifndef FOUNDRY_GAMEENGINE_DECISION_TREE_H
+#define FOUNDRY_GAMEENGINE_DECISION_TREE_H
 
 #include <functional>
 #include <memory>
@@ -47,4 +47,4 @@ private:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_DECISION_TREE_H
+#endif // FOUNDRY_GAMEENGINE_DECISION_TREE_H

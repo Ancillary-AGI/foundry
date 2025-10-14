@@ -108,7 +108,6 @@ add_custom_target(run_memory_tests
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin/tests
     COMMENT "Running memory management tests only"
 )
-
 # Install test executable
 install(TARGETS FoundryEngineTests
     RUNTIME DESTINATION bin/tests
@@ -137,3 +136,4 @@ add_custom_target(test_summary
     DEPENDS FoundryEngineTests
     COMMENT "Display test summary information"
 )
+

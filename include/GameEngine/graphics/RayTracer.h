@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_RAY_TRACER_H
-#define NEUTRAL_GAMEENGINE_RAY_TRACER_H
+#ifndef FOUNDRY_GAMEENGINE_RAY_TRACER_H
+#define FOUNDRY_GAMEENGINE_RAY_TRACER_H
 
 #include <vector>
 #include <memory>
@@ -213,4 +213,4 @@ private:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_RAY_TRACER_H
+#endif // FOUNDRY_GAMEENGINE_RAY_TRACER_H

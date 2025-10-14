@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_QUATERNION_H
-#define NEUTRAL_GAMEENGINE_QUATERNION_H
+#ifndef FOUNDRY_GAMEENGINE_QUATERNION_H
+#define FOUNDRY_GAMEENGINE_QUATERNION_H
 
 #include "Vector3.h"
 #include <cmath>
@@ -102,4 +102,4 @@ public:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_QUATERNION_H
+#endif // FOUNDRY_GAMEENGINE_QUATERNION_H

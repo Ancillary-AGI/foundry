@@ -269,5 +269,4 @@ elseif(APPLE)
 else()
     set(CPACK_GENERATOR "DEB;RPM;TGZ")
 endif()
-
 include(CPack)

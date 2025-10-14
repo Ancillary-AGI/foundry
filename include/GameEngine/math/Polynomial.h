@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_POLYNOMIAL_H
-#define NEUTRAL_GAMEENGINE_POLYNOMIAL_H
+#ifndef FOUNDRY_GAMEENGINE_POLYNOMIAL_H
+#define FOUNDRY_GAMEENGINE_POLYNOMIAL_H
 
 #include <vector>
 #include <cmath>
@@ -192,4 +192,4 @@ public:
 
 }  // namespace FoundryEngine
 
-#endif  // NEUTRAL_GAMEENGINE_POLYNOMIAL_H
+#endif  // FOUNDRY_GAMEENGINE_POLYNOMIAL_H

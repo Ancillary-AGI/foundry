@@ -1,0 +1,218 @@
+{
+  "name": "FoundryEngine",
+  "version": "1.0.0",
+  "description": "A high-performance, cross-platform game engine with modern IDE",
+  "author": "FoundryEngine Team",
+  "license": "MIT",
+  "homepage": "https://github.com/yourusername/foundry-engine",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/foundry-engine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/foundry-engine/issues"
+  },
+  "keywords": [
+    "game-engine",
+    "c++",
+    "kotlin",
+    "multiplatform",
+    "ecs",
+    "rendering",
+    "networking",
+    "ide"
+  ],
+  "engines": {
+    "cmake": ">=3.16",
+    "cpp": ">=20",
+    "kotlin": ">=1.8",
+    "go": ">=1.19"
+  },
+  "platforms": {
+    "windows": {
+      "supported": true,
+      "compilers": ["msvc", "gcc", "clang"],
+      "architectures": ["x64", "x86", "arm64"]
+    },
+    "linux": {
+      "supported": true,
+      "compilers": ["gcc", "clang"],
+      "architectures": ["x64", "arm64"]
+    },
+    "macos": {
+      "supported": true,
+      "compilers": ["clang"],
+      "architectures": ["x64", "arm64"]
+    },
+    "android": {
+      "supported": true,
+      "ndk": ">=21.4.7075529",
+      "architectures": ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
+    },
+    "ios": {
+      "supported": true,
+      "architectures": ["arm64", "x64"]
+    },
+    "web": {
+      "supported": true,
+      "emscripten": ">=3.1.0",
+      "features": ["webgl2", "wasm", "simd"]
+    }
+  },
+  "features": {
+    "core": {
+      "ecs": true,
+      "memory_pooling": true,
+      "simd_optimizations": true,
+      "multithreading": true
+    },
+    "rendering": {
+      "opengl": true,
+      "directx11": true,
+      "vulkan": false,
+      "webgpu": false,
+      "deferred_shading": true,
+      "pbr_materials": true,
+      "post_processing": true,
+      "vr_support": true
+    },
+    "audio": {
+      "openal": true,
+      "xaudio2": true,
+      "3d_audio": true,
+      "spatial_audio": true,
+      "doppler_effect": true
+    },
+    "physics": {
+      "bullet": true,
+      "collision_detection": true,
+      "rigid_body": true,
+      "soft_body": false,
+      "fluid_simulation": false
+    },
+    "networking": {
+      "udp": true,
+      "tcp": false,
+      "webrtc": false,
+      "client_prediction": true,
+      "server_reconciliation": true,
+      "lag_compensation": true
+    },
+    "ai": {
+      "behavior_trees": true,
+      "state_machines": true,
+      "pathfinding": true,
+      "flocking": true,
+      "reinforcement_learning": false
+    },
+    "scripting": {
+      "lua": true,
+      "javascript": false,
+      "python": false,
+      "hot_reload": true
+    },
+    "ide": {
+      "cross_platform": true,
+      "visual_editor": true,
+      "code_editor": true,
+      "debugger": true,
+      "profiler": true,
+      "asset_browser": true
+    }
+  },
+  "dependencies": {
+    "core": {
+      "cmake": ">=3.16",
+      "c++20": "required"
+    },
+    "rendering": {
+      "opengl": ">=3.3",
+      "directx": ">=11.0",
+      "vulkan": ">=1.0"
+    },
+    "audio": {
+      "openal": ">=1.1",
+      "xaudio2": ">=2.8"
+    },
+    "physics": {
+      "bullet": ">=3.25"
+    },
+    "networking": {
+      "go": ">=1.19"
+    },
+    "scripting": {
+      "lua": ">=5.4"
+    },
+    "ide": {
+      "kotlin": ">=1.8",
+      "gradle": ">=7.0",
+      "jvm": ">=11"
+    },
+    "web": {
+      "emscripten": ">=3.1.0"
+    }
+  },
+  "build": {
+    "cmake": {
+      "minimum_version": "3.16",
+      "generators": ["Unix Makefiles", "Ninja", "Visual Studio 16 2019", "Xcode"]
+    },
+    "compilers": {
+      "gcc": ">=10.0",
+      "clang": ">=10.0",
+      "msvc": ">=2019"
+    },
+    "flags": {
+      "cxx": ["-std=c++20", "-Wall", "-Wextra", "-Wpedantic"],
+      "release": ["-O3", "-DNDEBUG"],
+      "debug": ["-g", "-O0", "-DDEBUG"]
+    }
+  },
+  "testing": {
+    "framework": "Google Test",
+    "coverage": true,
+    "benchmarks": true,
+    "integration_tests": true
+  },
+  "documentation": {
+    "format": "markdown",
+    "generator": "doxygen",
+    "api_reference": true,
+    "tutorials": true,
+    "examples": true
+  },
+  "ci_cd": {
+    "github_actions": true,
+    "platforms": ["windows", "linux", "macos"],
+    "build_matrix": {
+      "compiler": ["gcc", "clang", "msvc"],
+      "build_type": ["debug", "release"]
+    }
+  },
+  "distribution": {
+    "package_managers": {
+      "vcpkg": true,
+      "conan": false,
+      "spack": false
+    },
+    "releases": {
+      "github": true,
+      "docker": true,
+      "snap": false
+    }
+  },
+  "metrics": {
+    "lines_of_code": {
+      "cpp": "~50000",
+      "kotlin": "~30000",
+      "go": "~10000",
+      "total": "~90000"
+    },
+    "test_coverage": ">=80%",
+    "performance": {
+      "frame_time": "<16ms",
+      "memory_usage": "<100MB",
+      "startup_time": "<2s"
+    }
+  }
+}

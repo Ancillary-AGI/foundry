@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_SYSTEM_H
-#define NEUTRAL_GAMEENGINE_SYSTEM_H
+#ifndef FOUNDRY_GAMEENGINE_SYSTEM_H
+#define FOUNDRY_GAMEENGINE_SYSTEM_H
 
 namespace FoundryEngine {
 
@@ -11,4 +11,4 @@ public:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_SYSTEM_H
+#endif // FOUNDRY_GAMEENGINE_SYSTEM_H

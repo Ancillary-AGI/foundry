@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_DOPPLER_EFFECT_H
-#define NEUTRAL_GAMEENGINE_DOPPLER_EFFECT_H
+#ifndef FOUNDRY_GAMEENGINE_DOPPLER_EFFECT_H
+#define FOUNDRY_GAMEENGINE_DOPPLER_EFFECT_H
 
 #include "../../core/System.h"
 #include "../../math/Vector3.h"
@@ -89,4 +89,4 @@ public:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_DOPPLER_EFFECT_H
+#endif // FOUNDRY_GAMEENGINE_DOPPLER_EFFECT_H

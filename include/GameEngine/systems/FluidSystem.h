@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_FLUID_SYSTEM_H
-#define NEUTRAL_GAMEENGINE_FLUID_SYSTEM_H
+#ifndef FOUNDRY_GAMEENGINE_FLUID_SYSTEM_H
+#define FOUNDRY_GAMEENGINE_FLUID_SYSTEM_H
 
 #include <vector>
 #include <unordered_map>
@@ -579,4 +579,4 @@ private:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_FLUID_SYSTEM_H
+#endif // FOUNDRY_GAMEENGINE_FLUID_SYSTEM_H

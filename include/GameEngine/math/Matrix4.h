@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_MATRIX4_H
-#define NEUTRAL_GAMEENGINE_MATRIX4_H
+#ifndef FOUNDRY_GAMEENGINE_MATRIX4_H
+#define FOUNDRY_GAMEENGINE_MATRIX4_H
 
 #include "Vector3.h"
 #include <array>
@@ -60,4 +60,4 @@ public:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_MATRIX4_H
+#endif // FOUNDRY_GAMEENGINE_MATRIX4_H

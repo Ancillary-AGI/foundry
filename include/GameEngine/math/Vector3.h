@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_VECTOR3_H
-#define NEUTRAL_GAMEENGINE_VECTOR3_H
+#ifndef FOUNDRY_GAMEENGINE_VECTOR3_H
+#define FOUNDRY_GAMEENGINE_VECTOR3_H
 
 #include <cmath>
 
@@ -77,4 +77,4 @@ public:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_VECTOR3_H
+#endif // FOUNDRY_GAMEENGINE_VECTOR3_H

@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_ENTITY_H
-#define NEUTRAL_GAMEENGINE_ENTITY_H
+#ifndef FOUNDRY_GAMEENGINE_ENTITY_H
+#define FOUNDRY_GAMEENGINE_ENTITY_H
 
 #include <vector>
 #include <memory>
@@ -37,4 +37,4 @@ public:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_ENTITY_H
+#endif // FOUNDRY_GAMEENGINE_ENTITY_H

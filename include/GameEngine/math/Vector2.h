@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_VECTOR2_H
-#define NEUTRAL_GAMEENGINE_VECTOR2_H
+#ifndef FOUNDRY_GAMEENGINE_VECTOR2_H
+#define FOUNDRY_GAMEENGINE_VECTOR2_H
 
 #include <cmath>
 
@@ -23,8 +23,23 @@ public:
         return Vector2(x * scalar, y * scalar);
     }
 
-    Vector2 operator/(float scalar) const {
-        return Vector2(x / scalar, y / scalar);
+    Vector2 operator-() const {
+        return Vector2(-x, -y);
+    }
+
+    Vector2& operator+=(const Vector2& other) {
+        x += other.x; y += other.y;
+        return *this;
+    }
+
+    Vector2& operator-=(const Vector2& other) {
+        x -= other.x; y -= other.y;
+        return *this;
+    }
+
+    Vector2& operator*=(float scalar) {
+        x *= scalar; y *= scalar;
+        return *this;
     }
 
     float magnitude() const {
@@ -38,7 +53,7 @@ public:
     Vector2 normalized() const {
         float mag = magnitude();
         if (mag > 0) {
-            return *this / mag;
+            return *this * (1.0f / mag);
         }
         return Vector2(0, 0);
     }
@@ -47,19 +62,11 @@ public:
         return x*other.x + y*other.y;
     }
 
-    float cross(const Vector2& other) const {
-        return x * other.y - y * other.x;
-    }
-
-    Vector2 perpendicular() const {
-        return Vector2(y, -x); // CW perpendicular
-    }
-
-    Vector2 reflect(const Vector2& normal) const {
-        return *this - 2 * dot(normal) * normal;
+    Vector2 lerp(const Vector2& other, float t) const {
+        return *this + (other - *this) * t;
     }
 };
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_VECTOR2_H
+#endif // FOUNDRY_GAMEENGINE_VECTOR2_H

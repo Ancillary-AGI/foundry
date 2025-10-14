@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_AI_COMPONENT_H
-#define NEUTRAL_GAMEENGINE_AI_COMPONENT_H
+#ifndef FOUNDRY_GAMEENGINE_AI_COMPONENT_H
+#define FOUNDRY_GAMEENGINE_AI_COMPONENT_H
 
 #include "../ai/DecisionTree.h"
 #include "../ai/BehaviorTree.h"
@@ -27,4 +27,4 @@ public:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_AI_COMPONENT_H
+#endif // FOUNDRY_GAMEENGINE_AI_COMPONENT_H

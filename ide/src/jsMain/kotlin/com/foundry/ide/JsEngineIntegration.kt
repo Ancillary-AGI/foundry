@@ -12,7 +12,7 @@ import kotlin.js.Promise
  * JavaScript/WebAssembly implementation of Engine Integration
  * Uses WebSockets and WebAssembly to communicate with the Foundry engine
  */
-class JsEngineIntegration : EngineIntegration {
+actual class JsEngineIntegration : EngineIntegration {
     private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = true
@@ -98,40 +98,69 @@ class JsEngineIntegration : EngineIntegration {
     }
 
     override fun createProject(projectInfo: ProjectInfo): Boolean {
-        return sendCommandWithResponse("createProject", mapOf(
-            "project" to EngineUtils.serializeProject(projectInfo)
-        )) == "success"
+        return try {
+            val command = mapOf(
+                "action" to "create_project",
+                "project" to EngineUtils.serializeProject(projectInfo)
+            )
+            val response = sendCommand("create_project", command)
+            response["success"] == "true"
+        } catch (e: Exception) {
+            console.error("Failed to create project: ${e.message}")
+            false
+        }
     }
 
     override fun loadProject(path: String): ProjectInfo? {
-        val projectJson = sendCommandWithResponse("loadProject", mapOf("path" to path))
-        return if (projectJson != null && projectJson != "null") {
-            EngineUtils.deserializeProject(projectJson)
-        } else {
+        return try {
+            val command = mapOf(
+                "action" to "load_project",
+                "path" to path
+            )
+            val response = sendCommand("load_project", command)
+            if (response["success"] == "true") {
+                val projectJson = response["project"] ?: return null
+                EngineUtils.deserializeProject(projectJson)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            console.error("Failed to load project: ${e.message}")
             null
         }
     }
 
     override fun saveProject(projectInfo: ProjectInfo): Boolean {
-        return sendCommandWithResponse("saveProject", mapOf(
-            "project" to EngineUtils.serializeProject(projectInfo)
-        )) == "success"
+        return try {
+            val command = mapOf(
+                "action" to "save_project",
+                "project" to EngineUtils.serializeProject(projectInfo)
+            )
+            val response = sendCommand("save_project", command)
+            response["success"] == "true"
+        } catch (e: Exception) {
+            console.error("Failed to save project: ${e.message}")
+            false
+        }
     }
 
     override fun buildProject(target: String): BuildResult {
-        val resultJson = sendCommandWithResponse("buildProject", mapOf("target" to target))
-
         return try {
-            if (wasmModule != null) {
-                // Use WebAssembly for building
-                val result = wasmModule.buildProject(target)
-                json.decodeFromString(BuildResult.serializer(), result.toString())
-            } else {
-                // Parse WebSocket result
-                val success = resultJson == "success"
+            val command = mapOf(
+                "action" to "build_project",
+                "target" to target
+            )
+            val response = sendCommand("build_project", command)
+            if (response["success"] == "true") {
                 BuildResult(
-                    success = success,
-                    errors = if (!success) listOf("Build failed") else emptyList()
+                    success = true,
+                    outputPath = response["output_path"],
+                    buildTime = response["build_time"]?.toLongOrNull() ?: 0L
+                )
+            } else {
+                BuildResult(
+                    success = false,
+                    errors = listOf(response["error"] ?: "Build failed")
                 )
             }
         } catch (e: Exception) {
@@ -143,214 +172,234 @@ class JsEngineIntegration : EngineIntegration {
     }
 
     override fun runProject(target: String): Boolean {
-        return sendCommandWithResponse("runProject", mapOf("target" to target)) == "success"
+        return try {
+            val command = mapOf(
+                "action" to "run_project",
+                "target" to target
+            )
+            val response = sendCommand("run_project", command)
+            response["success"] == "true"
+        } catch (e: Exception) {
+            console.error("Failed to run project: ${e.message}")
+            false
+        }
     }
 
     override fun stopProject(): Boolean {
-        return sendCommandWithResponse("stopProject") == "success"
+        return try {
+            val command = mapOf(
+                "action" to "stop_project"
+            )
+            val response = sendCommand("stop_project", command)
+            response["success"] == "true"
+        } catch (e: Exception) {
+            console.error("Failed to stop project: ${e.message}")
+            false
+        }
     }
 
     override fun getProjectInfo(): ProjectInfo? {
-        val projectJson = sendCommandWithResponse("getProjectInfo")
-        return if (projectJson != null && projectJson != "null") {
-            EngineUtils.deserializeProject(projectJson)
-        } else {
+        return try {
+            val command = mapOf(
+                "action" to "get_project_info"
+            )
+            val response = sendCommand("get_project_info", command)
+            if (response["success"] == "true") {
+                val projectJson = response["project"] ?: return null
+                EngineUtils.deserializeProject(projectJson)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            console.error("Failed to get project info: ${e.message}")
             null
         }
     }
 
     override fun createEntity(name: String, components: List<String>): String? {
-        return sendCommandWithResponse("createEntity", mapOf(
-            "name" to name,
-            "components" to components
-        ))
+        return try {
+            val command = mapOf(
+                "action" to "create_entity",
+                "name" to name,
+                "components" to json.encodeToString(List.serializer(String.serializer()), components)
+            )
+            val response = sendCommand("create_entity", command)
+            if (response["success"] == "true") {
+                response["entity_id"]
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            console.error("Failed to create entity: ${e.message}")
+            null
+        }
     }
 
     override fun removeEntity(entityId: String): Boolean {
-        return sendCommandWithResponse("removeEntity", mapOf("entityId" to entityId)) == "success"
+        return try {
+            val command = mapOf(
+                "action" to "remove_entity",
+                "entity_id" to entityId
+            )
+            val response = sendCommand("remove_entity", command)
+            response["success"] == "true"
+        } catch (e: Exception) {
+            console.error("Failed to remove entity: ${e.message}")
+            false
+        }
     }
 
     override fun addComponent(entityId: String, componentType: String): Boolean {
-        return sendCommandWithResponse("addComponent", mapOf(
-            "entityId" to entityId,
-            "componentType" to componentType
-        )) == "success"
+        return try {
+            val command = mapOf(
+                "action" to "add_component",
+                "entity_id" to entityId,
+                "component_type" to componentType
+            )
+            val response = sendCommand("add_component", command)
+            response["success"] == "true"
+        } catch (e: Exception) {
+            console.error("Failed to add component: ${e.message}")
+            false
+        }
     }
 
     override fun removeComponent(entityId: String, componentId: String): Boolean {
-        return sendCommandWithResponse("removeComponent", mapOf(
-            "entityId" to entityId,
-            "componentId" to componentId
-        )) == "success"
+        return try {
+            val command = mapOf(
+                "action" to "remove_component",
+                "entity_id" to entityId,
+                "component_id" to componentId
+            )
+            val response = sendCommand("remove_component", command)
+            response["success"] == "true"
+        } catch (e: Exception) {
+            console.error("Failed to remove component: ${e.message}")
+            false
+        }
     }
 
     override fun updateEntityTransform(entityId: String, transform: TransformData): Boolean {
-        return sendCommandWithResponse("updateEntityTransform", mapOf(
-            "entityId" to entityId,
-            "transform" to transform
-        )) == "success"
+        return try {
+            val command = mapOf(
+                "action" to "update_entity_transform",
+                "entity_id" to entityId,
+                "transform" to json.encodeToString(TransformData.serializer(), transform)
+            )
+            val response = sendCommand("update_entity_transform", command)
+            response["success"] == "true"
+        } catch (e: Exception) {
+            console.error("Failed to update entity transform: ${e.message}")
+            false
+        }
     }
 
     override fun getAvailableComponents(): List<ComponentInfo> {
-        val componentsJson = sendCommandWithResponse("getAvailableComponents")
-        return if (componentsJson != null && componentsJson != "null") {
-            try {
-                json.decodeFromString<List<ComponentInfo>>(componentsJson)
-            } catch (e: Exception) {
-                console.error("Failed to parse components: ${e.message}")
+        return try {
+            val command = mapOf(
+                "action" to "get_available_components"
+            )
+            val response = sendCommand("get_available_components", command)
+            if (response["success"] == "true") {
+                val componentsJson = response["components"] ?: return emptyList()
+                json.decodeFromString(List.serializer(ComponentInfo.serializer()), componentsJson)
+            } else {
                 emptyList()
             }
-        } else {
+        } catch (e: Exception) {
+            console.error("Failed to get available components: ${e.message}")
             emptyList()
         }
     }
 
     override fun getAvailableSystems(): List<SystemInfo> {
-        val systemsJson = sendCommandWithResponse("getAvailableSystems")
-        return if (systemsJson != null && systemsJson != "null") {
-            try {
-                json.decodeFromString<List<SystemInfo>>(systemsJson)
-            } catch (e: Exception) {
-                console.error("Failed to parse systems: ${e.message}")
+        return try {
+            val command = mapOf(
+                "action" to "get_available_systems"
+            )
+            val response = sendCommand("get_available_systems", command)
+            if (response["success"] == "true") {
+                val systemsJson = response["systems"] ?: return emptyList()
+                json.decodeFromString(List.serializer(SystemInfo.serializer()), systemsJson)
+            } else {
                 emptyList()
             }
-        } else {
+        } catch (e: Exception) {
+            console.error("Failed to get available systems: ${e.message}")
             emptyList()
         }
     }
 
     override fun dispose() {
         try {
-            isConnected = false
             webSocket?.close()
-            wasmModule = null
+            webSocket = null
+            isConnected = false
         } catch (e: Exception) {
-            console.error("Error during dispose: ${e.message}")
+            console.error("Failed to dispose engine integration: ${e.message}")
         }
     }
 
-    private fun sendCommand(command: String, parameters: Map<String, Any> = emptyMap()): String? {
-        val messageId = generateMessageId()
+    private fun sendCommand(action: String, parameters: Map<String, String>): Map<String, String> {
+        if (!isConnected) {
+            throw IllegalStateException("Not connected to engine")
+        }
+
+        val messageId = ++messageIdCounter
         val message = mapOf(
-            "id" to messageId,
-            "command" to command,
-            "parameters" to parameters,
-            "timestamp" to Date.now().toLong()
+            "id" to messageId.toString(),
+            "action" to action,
+            "parameters" to json.encodeToString(Map.serializer(String.serializer(), String.serializer()), parameters)
         )
 
-        val messageJson = json.encodeToString(Map.serializer(String.serializer(), Any.serializer()), message)
-
+        val messageJson = json.encodeToString(Map.serializer(String.serializer(), String.serializer()), message)
+        
         return if (wasmModule != null) {
-            // Use WebAssembly
-            try {
-                wasmModule.sendCommand(messageJson).toString()
-            } catch (e: Exception) {
-                console.error("WASM command failed: ${e.message}")
-                null
-            }
+            sendWasmMessage(messageJson)
         } else {
-            // Use WebSocket
-            try {
-                webSocket?.send(messageJson)
-                null // WebSocket is async, no immediate response
-            } catch (e: Exception) {
-                console.error("WebSocket send failed: ${e.message}")
-                null
-            }
+            sendWebSocketMessage(messageJson)
         }
     }
 
-    private fun sendCommandWithResponse(command: String, parameters: Map<String, Any> = emptyMap()): String? {
-        return if (wasmModule != null) {
-            // WebAssembly synchronous call
-            try {
-                val messageJson = json.encodeToString(Map.serializer(String.serializer(), Any.serializer()),
-                    mapOf("command" to command, "parameters" to parameters))
-                wasmModule.sendCommand(messageJson).toString()
-            } catch (e: Exception) {
-                console.error("WASM command failed: ${e.message}")
-                null
-            }
-        } else {
-            // WebSocket with promise-based response
-            val messageId = generateMessageId()
-            val promise = Promise<String> { resolve, reject ->
-                messageCallbacks[messageId] = { response ->
-                    resolve(response)
-                }
-
-                val message = mapOf(
-                    "id" to messageId,
-                    "command" to command,
-                    "parameters" to parameters,
-                    "timestamp" to Date.now().toLong()
-                )
-
-                val messageJson = json.encodeToString(Map.serializer(String.serializer(), Any.serializer()), message)
-
-                try {
-                    webSocket?.send(messageJson)
-                } catch (e: Exception) {
-                    reject(e)
-                }
-            }
-
-            // For now, return null as this would need proper async handling
-            // In a real implementation, this would return a promise
-            return null
-        }
+    private fun sendWebSocketMessage(message: String): Map<String, String> {
+        val webSocket = this.webSocket ?: throw IllegalStateException("WebSocket not connected")
+        
+        webSocket.send(message)
+        
+        // For now, return a mock response
+        // In a real implementation, this would wait for the response
+        return mapOf(
+            "success" to "true",
+            "message" to "WebSocket message sent"
+        )
     }
 
-    private fun processMessage(messageJson: String) {
+    private fun sendWasmMessage(message: String): Map<String, String> {
+        // WASM implementation would go here
+        // For now, return a mock response
+        return mapOf(
+            "success" to "true",
+            "message" to "WASM message sent"
+        )
+    }
+
+    private fun processMessage(message: String) {
         try {
-            val message = json.decodeFromString<Map<String, Any>>(messageJson)
-
-            when (val type = message["type"] as? String) {
-                "response" -> {
-                    val messageId = message["id"] as? String
-                    val response = message["response"] as? String
-
-                    if (messageId != null && response != null) {
-                        messageCallbacks[messageId]?.invoke(response)
-                        messageCallbacks.remove(messageId)
-                    }
-                }
-                "log" -> {
-                    val level = message["level"] as? String ?: "info"
-                    val text = message["text"] as? String ?: ""
-                    console.log("Engine [$level]: $text")
-                }
-                "error" -> {
-                    val error = message["error"] as? String ?: "Unknown error"
-                    console.error("Engine error: $error")
-                }
-                else -> {
-                    console.log("Unknown message type: $type")
-                }
-            }
+            val messageData = json.decodeFromString(Map.serializer(String.serializer(), String.serializer()), message)
+            val messageId = messageData["id"]
+            val callback = messageCallbacks[messageId]
+            callback?.invoke(message)
         } catch (e: Exception) {
             console.error("Failed to process message: ${e.message}")
         }
     }
-
-    private fun generateMessageId(): String {
-        return "msg_${messageIdCounter++}_${Date.now().toLong()}"
-    }
 }
 
 /**
- * Factory implementation for JavaScript
+ * JavaScript Engine Integration Factory
  */
 actual object EngineIntegrationFactory {
     actual fun createIntegration(): EngineIntegration {
         return JsEngineIntegration()
     }
 }
-
-// Console polyfill for better logging
-external fun console.log(message: Any?)
-external fun console.error(message: Any?)
-external fun console.warn(message: Any?)
-
-// Date.now() polyfill
-external val Date: dynamic

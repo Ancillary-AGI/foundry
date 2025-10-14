@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_JOB_SYSTEM_H
-#define NEUTRAL_GAMEENGINE_JOB_SYSTEM_H
+#ifndef FOUNDRY_GAMEENGINE_JOB_SYSTEM_H
+#define FOUNDRY_GAMEENGINE_JOB_SYSTEM_H
 
 #include <vector>
 #include <queue>
@@ -66,4 +66,4 @@ private:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_JOB_SYSTEM_H
+#endif // FOUNDRY_GAMEENGINE_JOB_SYSTEM_H

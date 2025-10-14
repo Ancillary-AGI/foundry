@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_NBODY_SYSTEM_H
-#define NEUTRAL_GAMEENGINE_NBODY_SYSTEM_H
+#ifndef FOUNDRY_GAMEENGINE_NBODY_SYSTEM_H
+#define FOUNDRY_GAMEENGINE_NBODY_SYSTEM_H
 
 #include <vector>
 #include <cmath>
@@ -79,4 +79,4 @@ private:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_NBODY_SYSTEM_H
+#endif // FOUNDRY_GAMEENGINE_NBODY_SYSTEM_H

@@ -1,5 +1,5 @@
-#ifndef NEUTRAL_GAMEENGINE_NERF_RENDERER_H
-#define NEUTRAL_GAMEENGINE_NERF_RENDERER_H
+#ifndef FOUNDRY_GAMEENGINE_NERF_RENDERER_H
+#define FOUNDRY_GAMEENGINE_NERF_RENDERER_H
 
 #include <vector>
 #include <functional>
@@ -72,4 +72,4 @@ public:
 
 } // namespace FoundryEngine
 
-#endif // NEUTRAL_GAMEENGINE_NERF_RENDERER_H
+#endif // FOUNDRY_GAMEENGINE_NERF_RENDERER_H
