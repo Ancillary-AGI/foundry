@@ -520,17 +520,117 @@ class CodeEditor {
     }
 
     /**
-     * Get syntax errors for document
+     * Get syntax errors and linting issues for document
      */
     fun getSyntaxErrors(filePath: String): List<SyntaxError> {
         val document = openDocuments[filePath] ?: return emptyList()
 
-        return when (document.language) {
+        val errors = mutableListOf<SyntaxError>()
+
+        // Basic syntax checking
+        errors.addAll(when (document.language) {
             "kotlin" -> checkKotlinSyntax(document.content)
             "cpp", "c" -> checkCppSyntax(document.content)
+            "java" -> checkJavaSyntax(document.content)
             "json" -> checkJsonSyntax(document.content)
+            "glsl" -> checkGLSLSyntax(document.content)
             else -> emptyList()
+        })
+
+        // Advanced linting
+        errors.addAll(performLinting(document))
+
+        return errors
+    }
+
+    /**
+     * Perform advanced linting on the document
+     */
+    private fun performLinting(document: EditorDocument): List<SyntaxError> {
+        val errors = mutableListOf<SyntaxError>()
+        val lines = document.content.lines()
+
+        lines.forEachIndexed { index, line ->
+            val lineNumber = index + 1
+
+            // Check for common issues
+            when (document.language) {
+                "kotlin" -> {
+                    // Check for unused imports (simplified)
+                    if (line.startsWith("import ") && line.contains(".*")) {
+                        errors.add(SyntaxError(
+                            line = lineNumber,
+                            column = 1,
+                            message = "Wildcard import detected - consider importing specific classes",
+                            severity = "warning"
+                        ))
+                    }
+
+                    // Check for long lines
+                    if (line.length > 120) {
+                        errors.add(SyntaxError(
+                            line = lineNumber,
+                            column = 121,
+                            message = "Line too long (max 120 characters)",
+                            severity = "warning"
+                        ))
+                    }
+
+                    // Check for TODO comments
+                    if (line.contains("TODO") || line.contains("FIXME")) {
+                        errors.add(SyntaxError(
+                            line = lineNumber,
+                            column = line.indexOf("TODO") + 1,
+                            message = "TODO/FIXME comment found",
+                            severity = "info"
+                        ))
+                    }
+                }
+                "cpp" -> {
+                    // Check for missing includes
+                    if (line.startsWith("#include") && !line.contains("<") && !line.contains("\"")) {
+                        errors.add(SyntaxError(
+                            line = lineNumber,
+                            column = 1,
+                            message = "Include statement may be malformed",
+                            severity = "warning"
+                        ))
+                    }
+
+                    // Check for long lines
+                    if (line.length > 100) {
+                        errors.add(SyntaxError(
+                            line = lineNumber,
+                            column = 101,
+                            message = "Line too long (max 100 characters)",
+                            severity = "warning"
+                        ))
+                    }
+                }
+                "java" -> {
+                    // Check for missing semicolons
+                    if (line.trim().matches(Regex(".*\\w+.*")) &&
+                        !line.trim().endsWith(";") &&
+                        !line.trim().endsWith("{") &&
+                        !line.trim().endsWith("}") &&
+                        !line.trim().endsWith(",") &&
+                        !line.contains("class ") &&
+                        !line.contains("interface ") &&
+                        !line.contains("if ") &&
+                        !line.contains("for ") &&
+                        !line.contains("while ")) {
+                        errors.add(SyntaxError(
+                            line = lineNumber,
+                            column = line.length + 1,
+                            message = "Missing semicolon",
+                            severity = "error"
+                        ))
+                    }
+                }
+            }
         }
+
+        return errors
     }
 
     /**
@@ -615,16 +715,171 @@ class CodeEditor {
     }
 
     /**
-     * Get code completion suggestions
+     * Check Java syntax
+     */
+    private fun checkJavaSyntax(content: String): List<SyntaxError> {
+        val errors = mutableListOf<SyntaxError>()
+        val lines = content.lines()
+
+        lines.forEachIndexed { index, line ->
+            // Check for unmatched braces
+            val openBraces = line.count { it == '{' }
+            val closeBraces = line.count { it == '}' }
+
+            if (openBraces > closeBraces) {
+                errors.add(SyntaxError(
+                    line = index + 1,
+                    column = line.length + 1,
+                    message = "Unmatched opening brace",
+                    severity = "error"
+                ))
+            }
+
+            // Check for missing class declaration
+            if (line.contains("public static void main") && !content.contains("class ")) {
+                errors.add(SyntaxError(
+                    line = index + 1,
+                    column = 1,
+                    message = "Main method found but no class declaration",
+                    severity = "error"
+                ))
+            }
+        }
+
+        return errors
+    }
+
+    /**
+     * Check GLSL syntax
+     */
+    private fun checkGLSLSyntax(content: String): List<SyntaxError> {
+        val errors = mutableListOf<SyntaxError>()
+        val lines = content.lines()
+
+        lines.forEachIndexed { index, line ->
+            // Check for missing precision qualifiers in fragment shaders
+            if (content.contains("#version") &&
+                content.contains("fragment") &&
+                line.contains("float") &&
+                !line.contains("highp") &&
+                !line.contains("mediump") &&
+                !line.contains("lowp") &&
+                !line.contains("precision")) {
+                errors.add(SyntaxError(
+                    line = index + 1,
+                    column = 1,
+                    message = "Missing precision qualifier for float in fragment shader",
+                    severity = "warning"
+                ))
+            }
+
+            // Check for void main function
+            if (line.contains("void main") && !line.contains("(")) {
+                errors.add(SyntaxError(
+                    line = index + 1,
+                    column = line.indexOf("void main") + 1,
+                    message = "Main function declaration incomplete",
+                    severity = "error"
+                ))
+            }
+        }
+
+        return errors
+    }
+
+    /**
+     * Get code completion suggestions with enhanced context awareness
      */
     fun getCompletions(filePath: String, line: Int, column: Int): List<CompletionItem> {
         val document = openDocuments[filePath] ?: return emptyList()
 
-        return when (document.language) {
+        val completions = mutableListOf<CompletionItem>()
+
+        // Get context-aware completions based on current line content
+        val lines = document.content.lines()
+        if (line < lines.size) {
+            val currentLine = lines[line]
+            val prefix = currentLine.substring(0, minOf(column, currentLine.length))
+
+            // Add context-aware completions
+            completions.addAll(getContextCompletions(document.language, prefix, document.content))
+        }
+
+        // Add language-specific completions
+        completions.addAll(when (document.language) {
             "kotlin" -> getKotlinCompletions(document.content, line, column)
             "cpp" -> getCppCompletions(document.content, line, column)
+            "java" -> getJavaCompletions(document.content, line, column)
+            "glsl" -> getGLSLCompletions(document.content, line, column)
             else -> emptyList()
+        })
+
+        return completions.distinctBy { it.label }
+    }
+
+    /**
+     * Get context-aware completions based on current typing
+     */
+    private fun getContextCompletions(language: String, prefix: String, fullContent: String): List<CompletionItem> {
+        val completions = mutableListOf<CompletionItem>()
+
+        // Extract variables, functions, and classes from current file
+        when (language) {
+            "kotlin" -> {
+                // Find variable declarations
+                Regex("val\\s+(\\w+)").findAll(fullContent).forEach { match ->
+                    val varName = match.groupValues[1]
+                    completions.add(CompletionItem(
+                        label = varName,
+                        kind = CompletionKind.VARIABLE,
+                        detail = "Variable"
+                    ))
+                }
+
+                // Find function declarations
+                Regex("fun\\s+(\\w+)").findAll(fullContent).forEach { match ->
+                    val funcName = match.groupValues[1]
+                    completions.add(CompletionItem(
+                        label = funcName,
+                        kind = CompletionKind.FUNCTION,
+                        detail = "Function"
+                    ))
+                }
+
+                // Find class declarations
+                Regex("class\\s+(\\w+)").findAll(fullContent).forEach { match ->
+                    val className = match.groupValues[1]
+                    completions.add(CompletionItem(
+                        label = className,
+                        kind = CompletionKind.CLASS,
+                        detail = "Class"
+                    ))
+                }
+            }
+            "cpp" -> {
+                // Find variable declarations
+                Regex("(?:int|float|double|char|String|bool)\\s+(\\w+)").findAll(fullContent).forEach { match ->
+                    val varName = match.groupValues[1]
+                    completions.add(CompletionItem(
+                        label = varName,
+                        kind = CompletionKind.VARIABLE,
+                        detail = "Variable"
+                    ))
+                }
+
+                // Find function declarations
+                Regex("(?:int|float|double|char|String|bool|void)\\s+(\\w+)\\s*\\(").findAll(fullContent).forEach { match ->
+                    val funcName = match.groupValues[1]
+                    completions.add(CompletionItem(
+                        label = funcName,
+                        kind = CompletionKind.FUNCTION,
+                        detail = "Function"
+                    ))
+                }
+            }
         }
+
+        return completions
     }
 
     /**
@@ -674,7 +929,9 @@ class CodeEditor {
         // Common C++ keywords
         val keywords = listOf(
             "class", "struct", "enum", "namespace", "public", "private", "protected",
-            "virtual", "override", "const", "static", "extern", "inline", "template"
+            "virtual", "override", "const", "static", "extern", "inline", "template",
+            "typename", "using", "auto", "nullptr", "constexpr", "noexcept",
+            "thread_local", "mutable", "volatile", "explicit", "friend"
         )
 
         keywords.forEach { keyword ->
@@ -682,6 +939,109 @@ class CodeEditor {
                 label = keyword,
                 kind = CompletionKind.KEYWORD,
                 detail = "C++ keyword"
+            ))
+        }
+
+        // Common C++ types
+        val types = listOf(
+            "int", "float", "double", "char", "bool", "void", "size_t", "string",
+            "vector", "map", "set", "array", "unique_ptr", "shared_ptr", "weak_ptr"
+        )
+
+        types.forEach { type ->
+            completions.add(CompletionItem(
+                label = type,
+                kind = CompletionKind.TYPE,
+                detail = "C++ type"
+            ))
+        }
+
+        return completions
+    }
+
+    /**
+     * Get Java code completions
+     */
+    private fun getJavaCompletions(content: String, line: Int, column: Int): List<CompletionItem> {
+        val completions = mutableListOf<CompletionItem>()
+
+        // Common Java keywords
+        val keywords = listOf(
+            "class", "interface", "enum", "public", "private", "protected", "static",
+            "final", "abstract", "synchronized", "volatile", "transient", "native",
+            "strictfp", "default", "package", "import", "extends", "implements"
+        )
+
+        keywords.forEach { keyword ->
+            completions.add(CompletionItem(
+                label = keyword,
+                kind = CompletionKind.KEYWORD,
+                detail = "Java keyword"
+            ))
+        }
+
+        // Common Java types
+        val types = listOf(
+            "String", "Integer", "Double", "Boolean", "Object", "List", "Map", "Set",
+            "ArrayList", "HashMap", "HashSet", "Optional", "Stream", "Collectors"
+        )
+
+        types.forEach { type ->
+            completions.add(CompletionItem(
+                label = type,
+                kind = CompletionKind.TYPE,
+                detail = "Java type"
+            ))
+        }
+
+        return completions
+    }
+
+    /**
+     * Get GLSL code completions
+     */
+    private fun getGLSLCompletions(content: String, line: Int, column: Int): List<CompletionItem> {
+        val completions = mutableListOf<CompletionItem>()
+
+        // GLSL keywords
+        val keywords = listOf(
+            "uniform", "attribute", "varying", "in", "out", "layout", "precision",
+            "highp", "mediump", "lowp", "const", "flat", "smooth"
+        )
+
+        keywords.forEach { keyword ->
+            completions.add(CompletionItem(
+                label = keyword,
+                kind = CompletionKind.KEYWORD,
+                detail = "GLSL keyword"
+            ))
+        }
+
+        // GLSL types
+        val types = listOf(
+            "vec2", "vec3", "vec4", "mat2", "mat3", "mat4", "sampler2D", "samplerCube",
+            "float", "int", "bool", "void"
+        )
+
+        types.forEach { type ->
+            completions.add(CompletionItem(
+                label = type,
+                kind = CompletionKind.TYPE,
+                detail = "GLSL type"
+            ))
+        }
+
+        // GLSL built-in functions
+        val functions = listOf(
+            "texture", "textureLod", "mix", "clamp", "normalize", "dot", "cross",
+            "length", "distance", "sin", "cos", "tan", "pow", "exp", "log"
+        )
+
+        functions.forEach { func ->
+            completions.add(CompletionItem(
+                label = func,
+                kind = CompletionKind.FUNCTION,
+                detail = "GLSL function"
             ))
         }
 

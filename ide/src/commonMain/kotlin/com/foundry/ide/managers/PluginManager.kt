@@ -202,6 +202,9 @@ class PluginManager {
     private val pluginsDir = Paths.get("ide/plugins")
     private val disabledPlugins = mutableSetOf<String>()
     private val pluginStates = ConcurrentHashMap<String, PluginState>()
+    private val pluginSandboxes = ConcurrentHashMap<String, PluginSandbox>()
+    private val pluginMetrics = ConcurrentHashMap<String, PluginMetrics>()
+    private val pluginEventListeners = mutableListOf<PluginEventListener>()
 
     init {
         ensureDirectoriesExist()
@@ -227,7 +230,7 @@ class PluginManager {
     }
 
     /**
-     * Load plugin from file with enhanced validation and lifecycle management
+     * Load plugin from file with enhanced validation, security scanning, and lifecycle management
      */
     fun loadPlugin(pluginFile: File): PluginLoadResult {
         return try {
@@ -266,6 +269,17 @@ class PluginManager {
                 return PluginLoadResult.Failure("Dependency check failed: $dependencyResult")
             }
 
+            // Advanced security scanning
+            val securityResult = performSecurityScan(pluginFile, metadata)
+            if (securityResult !is SecurityScanResult.Passed) {
+                pluginStates[metadata.id] = PluginState.ERROR
+                return PluginLoadResult.Failure("Security scan failed: $securityResult")
+            }
+
+            // Sandbox initialization
+            val sandbox = PluginSandbox(metadata.id, metadata.permissions)
+            pluginSandboxes[metadata.id] = sandbox
+
             // Load plugin class with reflection
             val pluginClass = loadPluginClass(pluginFile, metadata.mainClass)
                 ?: return PluginLoadResult.Failure("Could not load plugin class: ${metadata.mainClass}")
@@ -298,6 +312,13 @@ class PluginManager {
             // Register plugin contributions
             registerPluginContributions(plugin)
 
+            // Initialize plugin metrics
+            pluginMetrics[metadata.id] = PluginMetrics(
+                loadTime = System.currentTimeMillis(),
+                memoryUsage = 0L,
+                isActive = true
+            )
+
             // Register loaded plugin
             val loadedPlugin = LoadedPlugin(
                 metadata = metadata,
@@ -307,6 +328,9 @@ class PluginManager {
             )
 
             loadedPlugins[metadata.id] = loadedPlugin
+
+            // Notify event listeners
+            notifyPluginEventListeners { it.onPluginLoaded(metadata.id) }
 
             PluginLoadResult.Success(metadata)
         } catch (e: Exception) {
@@ -968,15 +992,21 @@ class PluginManager {
     }
 
     /**
-     * Shutdown all plugins with proper lifecycle
+     * Shutdown all plugins with proper lifecycle and cleanup
      */
     fun shutdownAllPlugins() {
         loadedPlugins.values.forEach { loadedPlugin ->
             try {
+                // Notify event listeners
+                notifyPluginEventListeners { it.onPluginUnloaded(loadedPlugin.metadata.id) }
+
                 loadedPlugin.plugin.onIdeShutdown()
                 loadedPlugin.plugin.shutdown()
                 loadedPlugin.classLoader.close()
                 pluginStates[loadedPlugin.metadata.id] = PluginState.DISABLED
+
+                // Cleanup sandbox
+                pluginSandboxes.remove(loadedPlugin.metadata.id)
             } catch (e: Exception) {
                 println("Failed to shutdown plugin ${loadedPlugin.metadata.id}: ${e.message}")
             }
@@ -987,6 +1017,80 @@ class PluginManager {
         commandHandlers.clear()
         extensionPoints.clear()
         pluginStates.clear()
+        pluginSandboxes.clear()
+        pluginMetrics.clear()
+    }
+
+    /**
+     * Add plugin event listener
+     */
+    fun addPluginEventListener(listener: PluginEventListener) {
+        pluginEventListeners.add(listener)
+    }
+
+    /**
+     * Remove plugin event listener
+     */
+    fun removePluginEventListener(listener: PluginEventListener) {
+        pluginEventListeners.remove(listener)
+    }
+
+    /**
+     * Get plugin sandbox
+     */
+    fun getPluginSandbox(pluginId: String): PluginSandbox? {
+        return pluginSandboxes[pluginId]
+    }
+
+    /**
+     * Get plugin metrics
+     */
+    fun getPluginMetrics(pluginId: String): PluginMetrics? {
+        return pluginMetrics[pluginId]
+    }
+
+    /**
+     * Update plugin metrics
+     */
+    fun updatePluginMetrics(pluginId: String, metrics: PluginMetrics) {
+        pluginMetrics[pluginId] = metrics
+    }
+
+    /**
+     * Validate plugin permissions at runtime
+     */
+    fun validateRuntimePermission(pluginId: String, permission: String): Boolean {
+        val sandbox = pluginSandboxes[pluginId] ?: return false
+        return sandbox.checkPermission(permission)
+    }
+
+    /**
+     * Validate file access for plugin
+     */
+    fun validateFileAccess(pluginId: String, path: String): Boolean {
+        val sandbox = pluginSandboxes[pluginId] ?: return false
+        return sandbox.validateFileAccess(path)
+    }
+
+    /**
+     * Validate network access for plugin
+     */
+    fun validateNetworkAccess(pluginId: String, url: String): Boolean {
+        val sandbox = pluginSandboxes[pluginId] ?: return false
+        return sandbox.validateNetworkAccess(url)
+    }
+
+    /**
+     * Notify plugin event listeners
+     */
+    private fun notifyPluginEventListeners(action: (PluginEventListener) -> Unit) {
+        pluginEventListeners.forEach { listener ->
+            try {
+                action(listener)
+            } catch (e: Exception) {
+                println("Plugin event listener error: ${e.message}")
+            }
+        }
     }
 }
 
@@ -1067,26 +1171,223 @@ interface PluginEventListener {
 }
 
 /**
- * Plugin sandbox for security
+ * Advanced plugin sandbox for security and resource management
  */
 class PluginSandbox(
     private val pluginId: String,
     private val permissions: List<String>
 ) {
+    private val resourceUsage = ConcurrentHashMap<String, Long>()
+    private val rateLimiters = ConcurrentHashMap<String, RateLimiter>()
+
+    init {
+        // Initialize rate limiters for different operations
+        rateLimiters["file_access"] = RateLimiter(100, 60000) // 100 ops per minute
+        rateLimiters["network_access"] = RateLimiter(50, 60000) // 50 ops per minute
+        rateLimiters["command_execution"] = RateLimiter(20, 60000) // 20 ops per minute
+    }
+
     fun checkPermission(permission: String): Boolean {
         return permission in permissions
     }
 
     fun validateFileAccess(path: String): Boolean {
-        // Implement file access validation based on permissions
-        return when {
-            "filesystem.read" in permissions -> true
-            "filesystem.write" in permissions -> true
-            else -> false
+        if (!checkPermission("filesystem.read") && !checkPermission("filesystem.write")) {
+            return false
         }
+
+        // Rate limiting
+        if (!rateLimiters["file_access"]!!.allow()) {
+            return false
+        }
+
+        // Path traversal prevention
+        val normalizedPath = java.nio.file.Paths.get(path).normalize().toString()
+        if (normalizedPath.contains("..") || normalizedPath.startsWith("/etc") ||
+            normalizedPath.startsWith("/proc") || normalizedPath.startsWith("/sys")) {
+            return false
+        }
+
+        // Resource usage tracking
+        resourceUsage["file_operations"] = resourceUsage.getOrDefault("file_operations", 0L) + 1
+
+        return true
     }
 
     fun validateNetworkAccess(url: String): Boolean {
-        return "network" in permissions
+        if (!checkPermission("network")) {
+            return false
+        }
+
+        // Rate limiting
+        if (!rateLimiters["network_access"]!!.allow()) {
+            return false
+        }
+
+        // URL validation
+        return try {
+            val parsedUrl = java.net.URL(url)
+            parsedUrl.protocol in setOf("http", "https") &&
+            !parsedUrl.host.isNullOrBlank()
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun validateCommandExecution(command: String): Boolean {
+        if (!checkPermission("command_execution")) {
+            return false
+        }
+
+        // Rate limiting
+        if (!rateLimiters["command_execution"]!!.allow()) {
+            return false
+        }
+
+        // Dangerous command prevention
+        val dangerousCommands = setOf("rm", "del", "format", "fdisk", "mkfs")
+        val commandParts = command.split("\\s+".toRegex())
+        if (commandParts.any { it in dangerousCommands }) {
+            return false
+        }
+
+        return true
+    }
+
+    fun getResourceUsage(): Map<String, Long> {
+        return resourceUsage.toMap()
+    }
+
+    fun resetResourceUsage() {
+        resourceUsage.clear()
+    }
+
+    fun getRateLimiterStatus(operation: String): RateLimiter.Status {
+        return rateLimiters[operation]?.getStatus() ?: RateLimiter.Status(0, 0, 0)
+    }
+}
+
+/**
+ * Rate limiter for plugin operations
+ */
+class RateLimiter(
+    private val maxRequests: Int,
+    private val timeWindowMs: Long
+) {
+    private val requests = mutableListOf<Long>()
+    private var lastCleanup = System.currentTimeMillis()
+
+    @Synchronized
+    fun allow(): Boolean {
+        val now = System.currentTimeMillis()
+
+        // Cleanup old requests
+        if (now - lastCleanup > timeWindowMs / 4) {
+            requests.removeIf { now - it > timeWindowMs }
+            lastCleanup = now
+        }
+
+        // Check if under limit
+        if (requests.size < maxRequests) {
+            requests.add(now)
+            return true
+        }
+
+        return false
+    }
+
+    fun getStatus(): Status {
+        val now = System.currentTimeMillis()
+        requests.removeIf { now - it > timeWindowMs }
+
+        return Status(
+            currentRequests = requests.size,
+            maxRequests = maxRequests,
+            remainingTimeMs = if (requests.isNotEmpty()) {
+                timeWindowMs - (now - requests.first())
+            } else 0L
+        )
+    }
+
+    data class Status(
+        val currentRequests: Int,
+        val maxRequests: Int,
+        val remainingTimeMs: Long
+    )
+}
+
+/**
+ * Security scan result
+ */
+sealed class SecurityScanResult {
+    object Passed : SecurityScanResult()
+    data class Failed(val violations: List<String>) : SecurityScanResult()
+}
+
+/**
+ * Perform security scan on plugin
+ */
+private fun performSecurityScan(pluginFile: File, metadata: PluginMetadata): SecurityScanResult {
+    val violations = mutableListOf<String>()
+
+    try {
+        // Check for malicious code patterns
+        val jarFile = java.util.jar.JarFile(pluginFile)
+        jarFile.use { jar ->
+            val entries = jar.entries()
+            while (entries.hasMoreElements()) {
+                val entry = entries.nextElement()
+                if (!entry.isDirectory && entry.name.endsWith(".class")) {
+                    jar.getInputStream(entry).use { input ->
+                        val classBytes = input.readBytes()
+
+                        // Check for dangerous bytecode patterns
+                        if (classBytes.containsDangerousPatterns()) {
+                            violations.add("Potentially dangerous bytecode in ${entry.name}")
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check permissions for security
+        val dangerousPermissions = setOf("system", "admin", "root")
+        if (metadata.permissions.any { it in dangerousPermissions }) {
+            violations.add("Plugin requests dangerous permissions: ${metadata.permissions}")
+        }
+
+        // Check for network access to suspicious domains
+        if (metadata.permissions.contains("network")) {
+            // Additional network permission checks could be added here
+        }
+
+    } catch (e: Exception) {
+        violations.add("Security scan failed: ${e.message}")
+    }
+
+    return if (violations.isEmpty()) {
+        SecurityScanResult.Passed
+    } else {
+        SecurityScanResult.Failed(violations)
+    }
+}
+
+/**
+ * Check bytecode for dangerous patterns
+ */
+private fun ByteArray.containsDangerousPatterns(): Boolean {
+    val dangerousPatterns = listOf(
+        "Runtime.getRuntime().exec", // Command execution
+        "System.exit", // System exit calls
+        "File.delete", // File deletion
+        "ProcessBuilder", // Process creation
+        "SecurityManager", // Security manipulation
+        "ClassLoader", // Class loading manipulation
+        "reflect" // Reflection usage (potentially dangerous)
+    )
+
+    val bytecodeString = String(this, Charsets.ISO_8859_1)
+    return dangerousPatterns.any { pattern ->
+        bytecodeString.contains(pattern)
     }
 }
