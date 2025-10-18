@@ -1,0 +1,53 @@
+{
+  "name": "My Foundry Game",
+  "version": "1.0.0",
+  "description": "A game built with Foundry Engine and TypeScript",
+  "author": "Your Name",
+  "main": "src/main.ts",
+  "scripts": {
+    "build": "foundry build",
+    "start": "foundry run",
+    "dev": "foundry run --dev",
+    "test": "foundry test"
+  },
+  "foundry": {
+    "engine": "1.0.0",
+    "target": "web",
+    "platforms": ["web", "desktop"],
+    "typescript": {
+      "version": "4.9.0",
+      "target": "ES2020",
+      "module": "ESNext",
+      "strict": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true
+    },
+    "build": {
+      "optimization": 2,
+      "sourceMap": true,
+      "minify": true,
+      "enableWasm": true,
+      "enableThreads": false,
+      "enableSIMD": true
+    },
+    "assets": {
+      "images": "assets/images/",
+      "sounds": "assets/sounds/",
+      "models": "assets/models/",
+      "shaders": "assets/shaders/"
+    },
+    "scenes": [
+      {
+        "name": "MainScene",
+        "file": "scenes/main.scene",
+        "active": true
+      }
+    ]
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^4.9.0"
+  }
+}
