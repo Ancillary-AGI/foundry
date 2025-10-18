@@ -536,14 +536,62 @@ public:
             std::string line;
             std::getline(statFile, line);
             // Parse CPU stats (simplified)
-            cpuUsage_ = 45.0f; // Placeholder
+            // Get actual CPU usage from /proc/stat
+            std::ifstream statFile("/proc/stat");
+            if (statFile.is_open()) {
+                std::string line;
+                std::getline(statFile, line);
+                std::istringstream iss(line);
+                std::string cpu;
+                long user, nice, system, idle, iowait, irq, softirq, steal;
+                iss >> cpu >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal;
+                
+                long totalIdle = idle + iowait;
+                long totalNonIdle = user + nice + system + irq + softirq + steal;
+                long total = totalIdle + totalNonIdle;
+                
+                static long prevTotal = 0, prevIdle = 0;
+                if (prevTotal > 0) {
+                    long totalDiff = total - prevTotal;
+                    long idleDiff = totalIdle - prevIdle;
+                    cpuUsage_ = 100.0f * (totalDiff - idleDiff) / totalDiff;
+                }
+                prevTotal = total;
+                prevIdle = totalIdle;
+            } else {
+                cpuUsage_ = 0.0f;
+            }
         }
 
         // Read /proc/meminfo for memory usage
         std::ifstream memFile("/proc/meminfo");
         if (memFile.is_open()) {
             // Parse memory stats (simplified)
-            memoryUsage_ = 60.0f; // Placeholder
+            // Get actual memory usage from /proc/meminfo
+            std::ifstream memFile("/proc/meminfo");
+            if (memFile.is_open()) {
+                std::string line;
+                long totalMem = 0, freeMem = 0, availableMem = 0;
+                
+                while (std::getline(memFile, line)) {
+                    if (line.find("MemTotal:") == 0) {
+                        sscanf(line.c_str(), "MemTotal: %ld kB", &totalMem);
+                    } else if (line.find("MemFree:") == 0) {
+                        sscanf(line.c_str(), "MemFree: %ld kB", &freeMem);
+                    } else if (line.find("MemAvailable:") == 0) {
+                        sscanf(line.c_str(), "MemAvailable: %ld kB", &availableMem);
+                    }
+                }
+                
+                if (totalMem > 0) {
+                    long usedMem = totalMem - availableMem;
+                    memoryUsage_ = 100.0f * usedMem / totalMem;
+                } else {
+                    memoryUsage_ = 0.0f;
+                }
+            } else {
+                memoryUsage_ = 0.0f;
+            }
         }
 
         // Check thermal throttling (simplified)

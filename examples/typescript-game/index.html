@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundryEngine TypeScript Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #hud h3 {
+            margin: 0 0 10px 0;
+            color: #00ff88;
+            font-size: 18px;
+        }
+
+        #hud div {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #cccccc;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #controls h3 {
+            margin: 0 0 10px 0;
+            color: #ffaa00;
+            font-size: 16px;
+        }
+
+        #controls div {
+            margin: 3px 0;
+            font-size: 12px;
+            color: #cccccc;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 12px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #loading h2 {
+            margin: 0 0 20px 0;
+            color: #00ff88;
+            font-size: 24px;
+        }
+
+        #loading p {
+            margin: 10px 0;
+            color: #cccccc;
+            font-size: 16px;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #00ff88;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(255, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 12px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+
+        #error h2 {
+            margin: 0 0 20px 0;
+            color: #ffffff;
+            font-size: 24px;
+        }
+
+        #error p {
+            margin: 10px 0;
+            color: #ffffff;
+            font-size: 16px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            #hud, #controls {
+                font-size: 12px;
+                padding: 10px;
+            }
+            
+            #hud h3, #controls h3 {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1280" height="720"></canvas>
+        
+        <div id="ui">
+            <div id="loading">
+                <h2>FoundryEngine</h2>
+                <div class="spinner"></div>
+                <p>Loading WebAssembly module...</p>
+                <p id="loadingStatus">Initializing engine...</p>
+            </div>
+            
+            <div id="error" class="hidden">
+                <h2>Error</h2>
+                <p id="errorMessage">Failed to load the game</p>
+                <button onclick="location.reload()" style="
+                    background: #ff4444;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    margin-top: 15px;
+                    font-size: 14px;
+                ">Retry</button>
+            </div>
+            
+            <div id="hud" class="hidden">
+                <h3>Game Stats</h3>
+                <div id="fps">FPS: 0</div>
+                <div id="entities">Entities: 0</div>
+                <div id="collectibles">Collectibles: 10</div>
+                <div id="score">Score: 0</div>
+            </div>
+            
+            <div id="controls" class="hidden">
+                <h3>Controls</h3>
+                <div>WASD / Arrow Keys - Move</div>
+                <div>Space - Jump</div>
+                <div>Mouse - Look around</div>
+                <div>ESC - Pause</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load FoundryEngine WebAssembly module -->
+    <script src="../../build/wasm/foundryengine_wasm.js"></script>
+    
+    <!-- Load engine runtime -->
+    <script src="../../src/web/engine.js"></script>
+    
+    <!-- Load TypeScript game -->
+    <script type="module" src="src/main.ts"></script>
+    
+    <script>
+        // Loading status updates
+        const loadingStatus = document.getElementById('loadingStatus');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const errorMessage = document.getElementById('errorMessage');
+        const hud = document.getElementById('hud');
+        const controls = document.getElementById('controls');
+        
+        // Update loading status
+        function updateLoadingStatus(message) {
+            if (loadingStatus) {
+                loadingStatus.textContent = message;
+            }
+        }
+        
+        // Show error
+        function showError(message) {
+            if (loading) loading.classList.add('hidden');
+            if (error) {
+                error.classList.remove('hidden');
+                if (errorMessage) errorMessage.textContent = message;
+            }
+        }
+        
+        // Hide loading and show game UI
+        function showGame() {
+            if (loading) loading.classList.add('hidden');
+            if (hud) hud.classList.remove('hidden');
+            if (controls) controls.classList.remove('hidden');
+        }
+        
+        // WebAssembly loading progress
+        window.addEventListener('load', () => {
+            updateLoadingStatus('Loading WebAssembly module...');
+            
+            // Check if WebAssembly is supported
+            if (!window.WebAssembly) {
+                showError('WebAssembly is not supported in this browser. Please use a modern browser.');
+                return;
+            }
+            
+            // Monitor loading progress
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 20;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(progressInterval);
+                    updateLoadingStatus('Initializing game...');
+                    
+                    // Show game after a short delay
+                    setTimeout(() => {
+                        showGame();
+                    }, 1000);
+                } else {
+                    updateLoadingStatus(`Loading... ${Math.floor(progress)}%`);
+                }
+            }, 200);
+        });
+        
+        // Handle errors
+        window.addEventListener('error', (event) => {
+            console.error('Game error:', event.error);
+            showError('An error occurred while loading the game. Please check the console for details.');
+        });
+        
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            showError('An error occurred while loading the game. Please check the console for details.');
+        });
+        
+        // Keyboard controls info
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                // Toggle pause
+                const game = window.foundryGame;
+                if (game) {
+                    if (game.isRunning) {
+                        game.stop();
+                        updateLoadingStatus('Game Paused - Press ESC to resume');
+                        loading.classList.remove('hidden');
+                    } else {
+                        game.start();
+                        showGame();
+                    }
+                }
+            }
+        });
+        
+        // Update entity count in HUD
+        function updateEntityCount(count) {
+            const entitiesElement = document.getElementById('entities');
+            if (entitiesElement) {
+                entitiesElement.textContent = `Entities: ${count}`;
+            }
+        }
+        
+        // Update collectibles count in HUD
+        function updateCollectiblesCount(count) {
+            const collectiblesElement = document.getElementById('collectibles');
+            if (collectiblesElement) {
+                collectiblesElement.textContent = `Collectibles: ${count}`;
+            }
+        }
+        
+        // Update score in HUD
+        function updateScore(score) {
+            const scoreElement = document.getElementById('score');
+            if (scoreElement) {
+                scoreElement.textContent = `Score: ${score}`;
+            }
+        }
+        
+        // Make functions globally available
+        window.updateEntityCount = updateEntityCount;
+        window.updateCollectiblesCount = updateCollectiblesCount;
+        window.updateScore = updateScore;
+    </script>
+</body>
+</html>

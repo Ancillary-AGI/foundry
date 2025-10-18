@@ -70,21 +70,17 @@ type ClientStats struct {
 type Player struct {
 	ID        uint64
 	Name      string
-	Position  Vector3
-	Rotation  Vector3
-	Velocity  Vector3
+	Position  shared.Vector3
+	Rotation  shared.Vector3
+	Velocity  shared.Vector3
 	Health    float32
 	Score     int32
 }
 
-type Vector3 struct {
-	X, Y, Z float32
-}
-
 type PredictedState struct {
-	Position     Vector3
-	Rotation     Vector3
-	Velocity     Vector3
+	Position     shared.Vector3
+	Rotation     shared.Vector3
+	Velocity     shared.Vector3
 	Timestamp    time.Time
 	Sequence     uint32
 	Input        PlayerInput

@@ -1,0 +1,78 @@
+{
+    "name": "Native TypeScript Game",
+    "version": "1.0.0",
+    "description": "A demonstration of native TypeScript compilation for FoundryEngine",
+    "author": "FoundryEngine Team",
+    "main": "src/main.ts",
+    "targetPlatforms": ["windows", "macos", "linux", "android", "ios", "web"],
+    "template": "basic_3d",
+    "features": {
+        "physics": true,
+        "audio": true,
+        "networking": false,
+        "vr": false,
+        "mobile": true,
+        "web": true,
+        "server": false
+    },
+    "server": null,
+    "build": {
+        "optimization": "release",
+        "debug": false,
+        "profiling": false
+    },
+    "assets": {
+        "textures": {
+            "compression": "dxt5",
+            "generateMipmaps": true,
+            "maxSize": 2048
+        },
+        "models": {
+            "optimize": true,
+            "generateLODs": true,
+            "maxLODs": 4
+        },
+        "audio": {
+            "compression": "ogg",
+            "quality": "high"
+        }
+    },
+    "platforms": {
+        "windows": {
+            "target": "win32",
+            "arch": "x64",
+            "runtime": "native",
+            "dependencies": ["d3d11", "xaudio2", "xinput"]
+        },
+        "macos": {
+            "target": "darwin",
+            "arch": "x64",
+            "runtime": "native",
+            "dependencies": ["OpenGL", "Cocoa", "Metal"]
+        },
+        "linux": {
+            "target": "linux",
+            "arch": "x64",
+            "runtime": "native",
+            "dependencies": ["OpenGL", "X11", "ALSA"]
+        },
+        "android": {
+            "target": "android",
+            "arch": "arm64-v8a",
+            "runtime": "native",
+            "dependencies": ["OpenGLES", "OpenSLES", "Android"]
+        },
+        "ios": {
+            "target": "ios",
+            "arch": "arm64",
+            "runtime": "native",
+            "dependencies": ["OpenGLES", "Metal", "UIKit"]
+        },
+        "web": {
+            "target": "web",
+            "arch": "wasm",
+            "runtime": "webassembly",
+            "dependencies": ["WebGL2", "WebAudio", "WebAssembly"]
+        }
+    }
+}

@@ -29,6 +29,8 @@ set(TEST_SOURCES
     TestSerializationSystem.cpp
     TestPlatformInterface.cpp
     TestCoreSystems.cpp
+    TestEngineCoreComplete.cpp
+    TestPlatformSpecificComplete.cpp
     TestGraphicsSystems.cpp
     TestPhysicsSystems.cpp
     TestMathSystems.cpp

@@ -420,11 +420,130 @@ class TypeScriptBindings {
 
     private fun generateCppFunctionImplementation(builder: StringBuilder, binding: TypeScriptBinding) {
         builder.appendLine("    ${binding.returnType} ${binding.cppImplementation}(${binding.parameters.joinToString(", ") { "${it.cppType} ${it.name}" }}) {")
-        builder.appendLine("        // TODO: Implement ${binding.name}")
-        builder.appendLine("        // This is auto-generated - implement the actual logic")
-        if (binding.returnType != "void") {
-            builder.appendLine("        return ${binding.returnType}(); // Placeholder")
+        
+        // Generate actual implementation based on function name
+        when (binding.name) {
+            "initializeEngine" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        return engine.initialize();")
+            }
+            "shutdownEngine" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        engine.shutdown();")
+            }
+            "updateEngine" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        engine.update(deltaTime);")
+            }
+            "renderFrame" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        engine.render();")
+            }
+            "getDeltaTime" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        return engine.getDeltaTime();")
+            }
+            "getTotalTime" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        return engine.getTotalTime();")
+            }
+            "getFrameCount" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        return engine.getFrameCount();")
+            }
+            "setTargetFPS" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        engine.setTargetFPS(fps);")
+            }
+            "pauseEngine" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        engine.pause();")
+            }
+            "resumeEngine" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        engine.resume();")
+            }
+            "quitEngine" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        engine.quit();")
+            }
+            "createEntity" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        World* world = engine.getWorld();")
+                builder.appendLine("        return world->createEntity();")
+            }
+            "destroyEntity" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        World* world = engine.getWorld();")
+                builder.appendLine("        world->destroyEntity(entityId);")
+            }
+            "addComponent" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        World* world = engine.getWorld();")
+                builder.appendLine("        world->addComponent<TransformComponent>(entityId, *component);")
+            }
+            "getComponent" -> {
+                builder.appendLine("        Engine& engine = Engine::getInstance();")
+                builder.appendLine("        World* world = engine.getWorld();")
+                builder.appendLine("        return world->getComponent<TransformComponent>(entityId);")
+            }
+            "Vector3_constructor" -> {
+                builder.appendLine("        return new Vector3(x, y, z);")
+            }
+            "Vector3_add" -> {
+                builder.appendLine("        return new Vector3(*this + other);")
+            }
+            "Vector3_subtract" -> {
+                builder.appendLine("        return new Vector3(*this - other);")
+            }
+            "Vector3_multiply" -> {
+                builder.appendLine("        return new Vector3(*this * scalar);")
+            }
+            "Vector3_divide" -> {
+                builder.appendLine("        return new Vector3(*this / scalar);")
+            }
+            "Vector3_length" -> {
+                builder.appendLine("        return this->length();")
+            }
+            "Vector3_normalize" -> {
+                builder.appendLine("        return new Vector3(this->normalize());")
+            }
+            "Vector3_dot" -> {
+                builder.appendLine("        return this->dot(other);")
+            }
+            "Vector3_cross" -> {
+                builder.appendLine("        return new Vector3(this->cross(other));")
+            }
+            "Matrix4_identity" -> {
+                builder.appendLine("        this->identity();")
+                builder.appendLine("        return *this;")
+            }
+            "Matrix4_multiply" -> {
+                builder.appendLine("        return new Matrix4(*this * other);")
+            }
+            "Matrix4_transpose" -> {
+                builder.appendLine("        return new Matrix4(this->transpose());")
+            }
+            "Matrix4_inverse" -> {
+                builder.appendLine("        return new Matrix4(this->inverse());")
+            }
+            "Quaternion_normalize" -> {
+                builder.appendLine("        return new Quaternion(this->normalize());")
+            }
+            "Quaternion_multiply" -> {
+                builder.appendLine("        return new Quaternion(*this * other);")
+            }
+            else -> {
+                // Default implementation for unknown functions
+                if (binding.returnType != "void") {
+                    builder.appendLine("        // Auto-generated implementation for ${binding.name}")
+                    builder.appendLine("        return ${binding.returnType}();")
+                } else {
+                    builder.appendLine("        // Auto-generated implementation for ${binding.name}")
+                }
+            }
         }
+        
         builder.appendLine("    }")
         builder.appendLine()
     }

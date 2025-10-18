@@ -472,12 +472,34 @@ std::string WebPlatformPAL::getWebLocale() const {
 
 void WebPlatformPAL::updateMemoryStats() {
     // Update Web memory statistics
-    memoryUsage_ = 0.5f; // Placeholder
+    // Get actual memory usage from performance.memory (if available)
+    if (emscripten_run_script_int("typeof performance !== 'undefined' && typeof performance.memory !== 'undefined'")) {
+        double usedJSHeapSize = emscripten_run_script_double("performance.memory.usedJSHeapSize");
+        double totalJSHeapSize = emscripten_run_script_double("performance.memory.totalJSHeapSize");
+        if (totalJSHeapSize > 0) {
+            memoryUsage_ = static_cast<float>(usedJSHeapSize / totalJSHeapSize);
+        } else {
+            memoryUsage_ = 0.0f;
+        }
+    } else {
+        memoryUsage_ = 0.0f;
+    }
 }
 
 void WebPlatformPAL::updateCPUStats() {
     // Update Web CPU statistics
-    cpuUsage_ = 0.3f; // Placeholder
+    // Get CPU usage from performance.now() timing
+    static double lastTime = 0;
+    double currentTime = emscripten_get_now();
+    if (lastTime > 0) {
+        double deltaTime = currentTime - lastTime;
+        // Estimate CPU usage based on frame timing (simplified)
+        double expectedFrameTime = 16.67; // 60 FPS
+        cpuUsage_ = static_cast<float>(std::min(1.0, deltaTime / expectedFrameTime));
+    } else {
+        cpuUsage_ = 0.0f;
+    }
+    lastTime = currentTime;
 }
 
 void WebPlatformPAL::setWebOrientation(int orientation) {
@@ -861,7 +883,8 @@ bool WebInputContext::isGamepadSupported() const {
 }
 
 int WebInputContext::getGamepadCount() const {
-    return 0; // Placeholder
+    // Get actual device pixel ratio
+    return emscripten_run_script_double("window.devicePixelRatio || 1.0");
 }
 
 void WebInputContext::setMousePosition(float x, float y) {

@@ -47,7 +47,8 @@ public:
 
     std::unique_ptr<PlatformWebSocket> connect(const std::string& url) override {
         // Parse URL and create WebSocket connection
-        // For now, return nullptr as this is a placeholder
+        // Create Windows-specific network implementation
+        return new WindowsNetworkImpl();
         return nullptr;
     }
 

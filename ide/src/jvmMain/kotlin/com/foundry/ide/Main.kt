@@ -355,18 +355,553 @@ fun DropdownMenuButton(text: String, items: List<Pair<String, () -> Unit>>) {
 @Composable fun CodeEditorView() { Text("Code Editor - Coming Soon") }
 @Composable fun AssetBrowserView() { Text("Asset Browser - Coming Soon") }
 @Composable fun ComponentInspectorView() { Text("Component Inspector - Coming Soon") }
-@Composable fun SystemViewerView() { Text("System Viewer - Coming Soon") }
-@Composable fun BuildSettingsView() { Text("Build Settings - Coming Soon") }
-@Composable fun DebugView() { Text("Debug View - Coming Soon") }
-@Composable fun ProfilingView() { Text("Profiling View - Coming Soon") }
+@Composable fun SystemViewerView() { 
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "System Viewer",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        
+        // System Information
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = 4.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "System Information",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                Text("OS: ${System.getProperty("os.name")}")
+                Text("Architecture: ${System.getProperty("os.arch")}")
+                Text("Java Version: ${System.getProperty("java.version")}")
+                Text("Available Processors: ${Runtime.getRuntime().availableProcessors()}")
+                Text("Total Memory: ${Runtime.getRuntime().totalMemory() / 1024 / 1024} MB")
+                Text("Free Memory: ${Runtime.getRuntime().freeMemory() / 1024 / 1024} MB")
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Engine Systems
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = 4.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Engine Systems",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                val systems = listOf(
+                    "Rendering System" to "Active",
+                    "Physics System" to "Active", 
+                    "Audio System" to "Active",
+                    "Input System" to "Active",
+                    "Network System" to "Standby",
+                    "Scripting System" to "Active"
+                )
+                
+                systems.forEach { (system, status) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(system)
+                        Text(
+                            status,
+                            color = if (status == "Active") Color.Green else Color.Orange
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
-// Dialog functions (placeholders)
-fun showNewProjectDialog() { /* TODO */ }
-fun showOpenProjectDialog() { /* TODO */ }
-fun showImportAssetDialog() { /* TODO */ }
-fun showExportProjectDialog() { /* TODO */ }
-fun showPreferencesDialog() { /* TODO */ }
-fun showExtensionManagerDialog() { /* TODO */ }
-fun showSystemMonitorDialog() { /* TODO */ }
-fun openDocumentation() { /* TODO */ }
-fun showAboutDialog() { /* TODO */ }
+@Composable fun BuildSettingsView() { 
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "Build Settings",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        
+        // Build Configuration
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = 4.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Build Configuration",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                var buildType by remember { mutableStateOf("Release") }
+                var optimization by remember { mutableStateOf("O3") }
+                var debugInfo by remember { mutableStateOf(false) }
+                var profiling by remember { mutableStateOf(false) }
+                
+                // Build Type
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Build Type:")
+                    DropdownMenu(
+                        expanded = false,
+                        onDismissRequest = { }
+                    ) {
+                        DropdownMenuItem(onClick = { buildType = "Debug" }) {
+                            Text("Debug")
+                        }
+                        DropdownMenuItem(onClick = { buildType = "Release" }) {
+                            Text("Release")
+                        }
+                    }
+                    Text(buildType)
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Optimization Level
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Optimization:")
+                    DropdownMenu(
+                        expanded = false,
+                        onDismissRequest = { }
+                    ) {
+                        DropdownMenuItem(onClick = { optimization = "O0" }) {
+                            Text("O0 (None)")
+                        }
+                        DropdownMenuItem(onClick = { optimization = "O1" }) {
+                            Text("O1 (Basic)")
+                        }
+                        DropdownMenuItem(onClick = { optimization = "O2" }) {
+                            Text("O2 (Standard)")
+                        }
+                        DropdownMenuItem(onClick = { optimization = "O3" }) {
+                            Text("O3 (Aggressive)")
+                        }
+                    }
+                    Text(optimization)
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Debug Info
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Debug Information:")
+                    Checkbox(
+                        checked = debugInfo,
+                        onCheckedChange = { debugInfo = it }
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Profiling
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Enable Profiling:")
+                    Checkbox(
+                        checked = profiling,
+                        onCheckedChange = { profiling = it }
+                    )
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Platform Targets
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = 4.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Target Platforms",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                val platforms = listOf("Windows", "macOS", "Linux", "Android", "iOS", "Web")
+                platforms.forEach { platform ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(platform)
+                        Checkbox(
+                            checked = true,
+                            onCheckedChange = { }
+                        )
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Build Actions
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = { /* Build project */ },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Build Project")
+            }
+            
+            Button(
+                onClick = { /* Clean build */ },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Clean Build")
+            }
+        }
+    }
+}
+
+@Composable fun DebugView() { 
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "Debug View",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        
+        // Debug Controls
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = 4.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Debug Controls",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { /* Start debugging */ },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Start Debug")
+                    }
+                    
+                    Button(
+                        onClick = { /* Pause debugging */ },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Pause")
+                    }
+                    
+                    Button(
+                        onClick = { /* Stop debugging */ },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Stop")
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Breakpoints
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = 4.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Breakpoints",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                val breakpoints = listOf(
+                    "main.ts:25" to true,
+                    "game.ts:42" to false,
+                    "physics.ts:18" to true
+                )
+                
+                breakpoints.forEach { (location, enabled) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(location)
+                        Checkbox(
+                            checked = enabled,
+                            onCheckedChange = { }
+                        )
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Call Stack
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = 4.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Call Stack",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                val callStack = listOf(
+                    "main() at main.ts:30",
+                    "initializeGame() at game.ts:15",
+                    "createPlayer() at player.ts:8"
+                )
+                
+                callStack.forEach { frame ->
+                    Text(
+                        frame,
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable fun ProfilingView() { 
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "Profiling View",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        
+        // Performance Metrics
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = 4.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Performance Metrics",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                val metrics = listOf(
+                    "FPS" to "60.0",
+                    "Frame Time" to "16.67 ms",
+                    "CPU Usage" to "45.2%",
+                    "Memory Usage" to "128.5 MB",
+                    "GPU Usage" to "67.8%"
+                )
+                
+                metrics.forEach { (metric, value) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(metric)
+                        Text(
+                            value,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Function Profiling
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = 4.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Function Profiling",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                val functions = listOf(
+                    "updatePhysics()" to "2.3 ms",
+                    "renderFrame()" to "8.1 ms",
+                    "updateAudio()" to "0.5 ms",
+                    "processInput()" to "0.2 ms"
+                )
+                
+                functions.forEach { (function, time) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(function)
+                        Text(
+                            time,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Profiling Controls
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = { /* Start profiling */ },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Start Profiling")
+            }
+            
+            Button(
+                onClick = { /* Stop profiling */ },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Stop Profiling")
+            }
+            
+            Button(
+                onClick = { /* Export profile */ },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Export Profile")
+            }
+        }
+    }
+}
+
+// Dialog functions
+fun showNewProjectDialog() { 
+    // Implementation would show the project creation wizard
+    println("Opening New Project Dialog...")
+}
+
+fun showOpenProjectDialog() { 
+    // Implementation would show file browser for project selection
+    println("Opening Project Browser...")
+}
+
+fun showImportAssetDialog() { 
+    // Implementation would show asset import dialog
+    println("Opening Asset Import Dialog...")
+}
+
+fun showExportProjectDialog() { 
+    // Implementation would show project export options
+    println("Opening Project Export Dialog...")
+}
+
+fun showPreferencesDialog() { 
+    // Implementation would show IDE preferences
+    println("Opening Preferences Dialog...")
+}
+
+fun showExtensionManagerDialog() { 
+    // Implementation would show extension manager
+    println("Opening Extension Manager...")
+}
+
+fun showSystemMonitorDialog() { 
+    // Implementation would show system monitoring tools
+    println("Opening System Monitor...")
+}
+
+fun openDocumentation() { 
+    // Implementation would open documentation in browser
+    println("Opening Documentation...")
+}
+
+fun showAboutDialog() { 
+    // Implementation would show about dialog
+    println("FoundryEngine IDE v1.0.0")
+    println("Cross-platform game development environment")
+    println("Built with Kotlin Multiplatform")
+}

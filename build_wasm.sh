@@ -100,7 +100,23 @@ echo "🏗️ Building FoundryEngine WASM..."
 
 emcc "${EMSCRIPTEN_FLAGS[@]}" \
     ../../src/main.cpp \
+    ../../src/web/WebAssemblyBindings.cpp \
     ../../platforms/web/WebPlatformPAL.cpp \
+    ../../src/Engine.cpp \
+    ../../src/World.cpp \
+    ../../src/Scene.cpp \
+    ../../src/MemoryPool.cpp \
+    ../../src/SerializationSystem.cpp \
+    ../../src/systems/AssetSystem.cpp \
+    ../../src/systems/AudioSystem.cpp \
+    ../../src/systems/InputSystem.cpp \
+    ../../src/systems/PhysicsSystem.cpp \
+    ../../src/systems/ScriptingSystem.cpp \
+    ../../src/systems/UISystem.cpp \
+    ../../src/systems/NetworkSystem.cpp \
+    ../../src/systems/ProfilerSystem.cpp \
+    ../../src/graphics/OpenGLRenderer.cpp \
+    ../../src/networking/UDPNetworking.cpp \
     -o foundryengine_wasm.js
 
 echo "✅ WASM Build completed successfully!"

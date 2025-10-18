@@ -97,7 +97,26 @@ endif()
 set(ENGINE_SOURCES
     src/Engine.cpp
     src/main.cpp
+    src/World.cpp
+    src/Scene.cpp
+    src/MemoryPool.cpp
+    src/SerializationSystem.cpp
     src/networking/UDPNetworking.cpp
+    src/systems/AssetSystem.cpp
+    src/systems/AssetPipeline.cpp
+    src/systems/AudioSystem.cpp
+    src/systems/InputSystem.cpp
+    src/systems/PhysicsSystem.cpp
+    src/systems/ScriptingSystem.cpp
+    src/systems/UISystem.cpp
+    src/systems/NetworkSystem.cpp
+    src/systems/ProfilerSystem.cpp
+    src/systems/UpdateSystem.cpp
+    src/graphics/OpenGLRenderer.cpp
+    src/graphics/D3D11Renderer.cpp
+    src/web/WebAssemblyBindings.cpp
+    src/typescript/NativeTypeScriptRuntime.cpp
+    src/typescript/TypeScriptToNativeCompiler.cpp
 )
 
 # Platform-specific sources
