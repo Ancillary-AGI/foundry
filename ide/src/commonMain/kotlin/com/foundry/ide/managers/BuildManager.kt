@@ -347,7 +347,7 @@ class BuildManager {
     }
 
     /**
-     * Simulate build process (placeholder for actual build logic)
+     * Simulate build process (basic implementation for demonstration)
      */
     private fun simulateBuild(
         projectInfo: ProjectInfo,

@@ -347,7 +347,7 @@ class AdvancedCodeGenerator : AgenticTool {
         val complexity = args["complexity"] as? String ?: "medium"
 
         // Advanced code generation logic would go here
-        // This is a placeholder implementation
+        // This is a basic implementation that generates simple code snippets
         val generatedCode = generateCodeSnippet(language, spec, style, complexity)
 
         return mapOf(

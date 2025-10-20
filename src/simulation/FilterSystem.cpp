@@ -868,10 +868,95 @@ float FXAAFilter::getParameter(const std::string& name) const {
 void FXAAFilter::applyCPU(const std::vector<unsigned char>& input,
                          std::vector<unsigned char>& output,
                          int width, int height) {
-    output = input; // Simplified - real FXAA is quite complex
+    output.resize(input.size());
 
-    // Basic edge detection and smoothing would go here
-    // This is a placeholder implementation
+    // FXAA implementation - Fast Approximate Anti-Aliasing
+    // This is a simplified version focusing on edge detection and smoothing
+
+    for (int y = 1; y < height - 1; ++y) {
+        for (int x = 1; x < width - 1; ++x) {
+            int idx = (y * width + x) * 4;
+
+            // Convert to luminance for edge detection
+            float lumCenter = (input[idx] * 0.299f + input[idx + 1] * 0.587f + input[idx + 2] * 0.114f) / 255.0f;
+
+            // Sample neighboring pixels
+            float lumN = (input[((y-1) * width + x) * 4] * 0.299f + input[((y-1) * width + x) * 4 + 1] * 0.587f + input[((y-1) * width + x) * 4 + 2] * 0.114f) / 255.0f;
+            float lumS = (input[((y+1) * width + x) * 4] * 0.299f + input[((y+1) * width + x) * 4 + 1] * 0.587f + input[((y+1) * width + x) * 4 + 2] * 0.114f) / 255.0f;
+            float lumE = (input[(y * width + x + 1) * 4] * 0.299f + input[(y * width + x + 1) * 4 + 1] * 0.587f + input[(y * width + x + 1) * 4 + 2] * 0.114f) / 255.0f;
+            float lumW = (input[(y * width + x - 1) * 4] * 0.299f + input[(y * width + x - 1) * 4 + 1] * 0.587f + input[(y * width + x - 1) * 4 + 2] * 0.114f) / 255.0f;
+
+            // Calculate gradients
+            float gradN = fabs(lumCenter - lumN);
+            float gradS = fabs(lumCenter - lumS);
+            float gradE = fabs(lumCenter - lumE);
+            float gradW = fabs(lumCenter - lumW);
+
+            // Find maximum gradient direction
+            float maxGrad = std::max({gradN, gradS, gradE, gradW});
+
+            if (maxGrad > threshold_) {
+                // This is an edge pixel - apply smoothing
+                float blendFactor = std::min(quality_, maxGrad / threshold_);
+
+                // Simple edge-directed smoothing
+                float smoothedLum = lumCenter * (1.0f - blendFactor) +
+                                  (lumN + lumS + lumE + lumW) * 0.25f * blendFactor;
+
+                // Apply smoothing to RGB channels proportionally
+                float ratio = smoothedLum / lumCenter;
+                if (lumCenter > 0.001f) { // Avoid division by zero
+                    output[idx] = static_cast<unsigned char>(std::min(255.0f, input[idx] * ratio));
+                    output[idx + 1] = static_cast<unsigned char>(std::min(255.0f, input[idx + 1] * ratio));
+                    output[idx + 2] = static_cast<unsigned char>(std::min(255.0f, input[idx + 2] * ratio));
+                } else {
+                    output[idx] = input[idx];
+                    output[idx + 1] = input[idx + 1];
+                    output[idx + 2] = input[idx + 2];
+                }
+            } else {
+                // Not an edge - copy original
+                output[idx] = input[idx];
+                output[idx + 1] = input[idx + 1];
+                output[idx + 2] = input[idx + 2];
+            }
+
+            output[idx + 3] = input[idx + 3]; // Alpha channel unchanged
+        }
+    }
+
+    // Handle borders - copy original pixels
+    for (int x = 0; x < width; ++x) {
+        // Top row
+        int idx = x * 4;
+        output[idx] = input[idx];
+        output[idx + 1] = input[idx + 1];
+        output[idx + 2] = input[idx + 2];
+        output[idx + 3] = input[idx + 3];
+
+        // Bottom row
+        idx = ((height - 1) * width + x) * 4;
+        output[idx] = input[idx];
+        output[idx + 1] = input[idx + 1];
+        output[idx + 2] = input[idx + 2];
+        output[idx + 3] = input[idx + 3];
+    }
+
+    for (int y = 1; y < height - 1; ++y) {
+        // Left column
+        int idx = (y * width) * 4;
+        output[idx] = input[idx];
+        output[idx + 1] = input[idx + 1];
+        output[idx + 2] = input[idx + 2];
+        output[idx + 3] = input[idx + 3];
+
+        // Right column
+        idx = (y * width + width - 1) * 4;
+        output[idx] = input[idx];
+        output[idx + 1] = input[idx + 1];
+        output[idx + 2] = input[idx + 2];
+        output[idx + 3] = input[idx + 3];
+    }
 }
 
 void FXAAFilter::applyGPU(const std::vector<unsigned char>& input,

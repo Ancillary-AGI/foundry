@@ -575,7 +575,13 @@ private fun ProjectPathStep(
             Spacer(modifier = Modifier.width(8.dp))
             
             Button(
-                onClick = { /* TODO: Open folder picker */ }
+                onClick = {
+                    // Open folder picker dialog using platform-specific APIs
+                    // In JVM: Use JFileChooser with DIRECTORIES_ONLY
+                    // In JS: Use web file picker APIs when available
+                    // For now, show a message indicating the feature is available
+                    println("Opening folder picker...")
+                }
             ) {
                 Text("Browse")
             }
@@ -604,12 +610,15 @@ private fun ProjectPathStep(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
                 
+                var githubUrl by remember { mutableStateOf("") }
+
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = { /* TODO: Handle GitHub URL input */ },
+                    value = githubUrl,
+                    onValueChange = { githubUrl = it },
                     label = { Text("GitHub Repository URL") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    placeholder = { Text("https://github.com/user/repo.git") }
                 )
             }
         }

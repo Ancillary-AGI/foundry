@@ -301,8 +301,8 @@ private fun showFileMenu() {
 
 private fun showEditMenu() {
     showDropdownMenu("Edit", listOf(
-        "Undo" to { /* TODO */ },
-        "Redo" to { /* TODO */ },
+        "Undo" to { ideApp.undo() },
+        "Redo" to { ideApp.redo() },
         "Preferences" to { showPreferencesDialog() }
     ))
 }

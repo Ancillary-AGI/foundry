@@ -330,7 +330,7 @@ private fun Character3DPreview(characterData: CharacterData, selectedBodyPart: B
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // 3D Preview placeholder
+        // 3D Character Preview
         Card(
             modifier = Modifier.size(300.dp),
             elevation = 8.dp
@@ -339,15 +339,7 @@ private fun Character3DPreview(characterData: CharacterData, selectedBodyPart: B
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("3D Character Preview", style = MaterialTheme.typography.h6)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("Character model would render here", style = MaterialTheme.typography.caption)
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Body part selection
-                    Text("Selected: ${selectedBodyPart?.name ?: "None"}", style = MaterialTheme.typography.caption)
-                }
+                Character3DModel(characterData, selectedBodyPart)
             }
         }
 
@@ -975,4 +967,189 @@ enum class ExtrudeDirection {
 
 enum class BrushMode {
     ADD, SUBTRACT, SMOOTH, GRAB
+}
+
+@Composable
+private fun Character3DModel(characterData: CharacterData, selectedBodyPart: BodyPart?) {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val width = size.width
+        val height = size.height
+        val centerX = width / 2
+        val centerY = height / 2
+
+        // Draw character silhouette
+        val bodyWidth = width * 0.3f
+        val bodyHeight = height * 0.6f
+        val headRadius = width * 0.15f
+
+        // Body (torso)
+        drawRect(
+            color = characterData.appearance.skinColor,
+            topLeft = Offset(centerX - bodyWidth/2, centerY - bodyHeight/2),
+            size = Size(bodyWidth, bodyHeight)
+        )
+
+        // Head
+        drawCircle(
+            color = characterData.appearance.skinColor,
+            radius = headRadius,
+            center = Offset(centerX, centerY - bodyHeight/2 - headRadius)
+        )
+
+        // Arms
+        val armWidth = bodyWidth * 0.25f
+        val armHeight = bodyHeight * 0.8f
+        drawRect(
+            color = characterData.appearance.skinColor,
+            topLeft = Offset(centerX - bodyWidth/2 - armWidth, centerY - armHeight/2),
+            size = Size(armWidth, armHeight)
+        )
+        drawRect(
+            color = characterData.appearance.skinColor,
+            topLeft = Offset(centerX + bodyWidth/2, centerY - armHeight/2),
+            size = Size(armWidth, armHeight)
+        )
+
+        // Legs
+        val legWidth = bodyWidth * 0.3f
+        val legHeight = bodyHeight * 0.9f
+        drawRect(
+            color = characterData.appearance.skinColor,
+            topLeft = Offset(centerX - bodyWidth/3 - legWidth/2, centerY + bodyHeight/2),
+            size = Size(legWidth, legHeight)
+        )
+        drawRect(
+            color = characterData.appearance.skinColor,
+            topLeft = Offset(centerX + bodyWidth/3 - legWidth/2, centerY + bodyHeight/2),
+            size = Size(legWidth, legHeight)
+        )
+
+        // Hair
+        drawCircle(
+            color = characterData.appearance.hairColor,
+            radius = headRadius * 1.1f,
+            center = Offset(centerX, centerY - bodyHeight/2 - headRadius * 0.9f)
+        )
+
+        // Eyes
+        val eyeRadius = headRadius * 0.15f
+        val eyeOffset = headRadius * 0.3f
+        drawCircle(
+            color = Color.White,
+            radius = eyeRadius,
+            center = Offset(centerX - eyeOffset, centerY - bodyHeight/2 - headRadius * 0.8f)
+        )
+        drawCircle(
+            color = Color.White,
+            radius = eyeRadius,
+            center = Offset(centerX + eyeOffset, centerY - bodyHeight/2 - headRadius * 0.8f)
+        )
+        drawCircle(
+            color = characterData.appearance.eyeColor,
+            radius = eyeRadius * 0.6f,
+            center = Offset(centerX - eyeOffset, centerY - bodyHeight/2 - headRadius * 0.8f)
+        )
+        drawCircle(
+            color = characterData.appearance.eyeColor,
+            radius = eyeRadius * 0.6f,
+            center = Offset(centerX + eyeOffset, centerY - bodyHeight/2 - headRadius * 0.8f)
+        )
+
+        // Highlight selected body part
+        selectedBodyPart?.let { part ->
+            val highlightColor = Color.Yellow.copy(alpha = 0.5f)
+            when (part) {
+                BodyPart.HEAD -> {
+                    drawCircle(
+                        color = highlightColor,
+                        radius = headRadius * 1.2f,
+                        center = Offset(centerX, centerY - bodyHeight/2 - headRadius)
+                    )
+                }
+                BodyPart.TORSO -> {
+                    drawRect(
+                        color = highlightColor,
+                        topLeft = Offset(centerX - bodyWidth/2 - 2, centerY - bodyHeight/2 - 2),
+                        size = Size(bodyWidth + 4, bodyHeight + 4)
+                    )
+                }
+                BodyPart.LEFT_ARM -> {
+                    drawRect(
+                        color = highlightColor,
+                        topLeft = Offset(centerX - bodyWidth/2 - armWidth - 2, centerY - armHeight/2 - 2),
+                        size = Size(armWidth + 4, armHeight + 4)
+                    )
+                }
+                BodyPart.RIGHT_ARM -> {
+                    drawRect(
+                        color = highlightColor,
+                        topLeft = Offset(centerX + bodyWidth/2 - 2, centerY - armHeight/2 - 2),
+                        size = Size(armWidth + 4, armHeight + 4)
+                    )
+                }
+                BodyPart.LEFT_LEG -> {
+                    drawRect(
+                        color = highlightColor,
+                        topLeft = Offset(centerX - bodyWidth/3 - legWidth/2 - 2, centerY + bodyHeight/2 - 2),
+                        size = Size(legWidth + 4, legHeight + 4)
+                    )
+                }
+                BodyPart.RIGHT_LEG -> {
+                    drawRect(
+                        color = highlightColor,
+                        topLeft = Offset(centerX + bodyWidth/3 - legWidth/2 - 2, centerY + bodyHeight/2 - 2),
+                        size = Size(legWidth + 4, legHeight + 4)
+                    )
+                }
+                else -> {} // Other parts not visualized in this simple model
+            }
+        }
+
+        // Draw clothing if present
+        characterData.appearance.clothing.forEach { (category, clothing) ->
+            when (category) {
+                "shirt" -> {
+                    drawRect(
+                        color = clothing.color,
+                        topLeft = Offset(centerX - bodyWidth/2 + 5, centerY - bodyHeight/2 + 5),
+                        size = Size(bodyWidth - 10, bodyHeight * 0.6f - 10)
+                    )
+                }
+                "pants" -> {
+                    drawRect(
+                        color = clothing.color,
+                        topLeft = Offset(centerX - bodyWidth/3 - legWidth/2 + 2, centerY + bodyHeight/2 + 10),
+                        size = Size(legWidth - 4, legHeight * 0.7f)
+                    )
+                    drawRect(
+                        color = clothing.color,
+                        topLeft = Offset(centerX + bodyWidth/3 - legWidth/2 + 2, centerY + bodyHeight/2 + 10),
+                        size = Size(legWidth - 4, legHeight * 0.7f)
+                    )
+                }
+            }
+        }
+    }
+
+    // Info overlay
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        Card(
+            backgroundColor = Color.Black.copy(alpha = 0.7f),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Selected: ${selectedBodyPart?.name?.replace("_", " ") ?: "None"} | " +
+                       "Height: ${"%.2f".format(characterData.appearance.height)}m | " +
+                       "Weight: ${characterData.appearance.weight}kg",
+                style = MaterialTheme.typography.caption,
+                color = Color.White,
+                modifier = Modifier.padding(4.dp)
+            )
+        }
+    }
 }

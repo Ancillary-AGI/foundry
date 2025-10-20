@@ -117,8 +117,8 @@ fun IdeTopBar() {
             DropdownMenuButton(
                 text = "Edit",
                 items = listOf(
-                    "Undo" to { /* TODO */ },
-                    "Redo" to { /* TODO */ },
+                    "Undo" to { ideApp.undo() },
+                    "Redo" to { ideApp.redo() },
                     "Preferences" to { showPreferencesDialog() }
                 )
             )

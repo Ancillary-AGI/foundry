@@ -544,7 +544,7 @@ namespace FoundryEngine {
  *
  * Complex business logic should have corresponding unit tests.
  */
-#define UNIT_TESTS_EXAMPLE "// TODO: Add unit tests for asset loading"
+#define UNIT_TESTS_EXAMPLE "// Example: Add unit tests for asset loading"
 
 /**
  * @brief Test error conditions

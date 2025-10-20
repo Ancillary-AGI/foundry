@@ -49,12 +49,29 @@ actual class JsEngineIntegration : EngineIntegration {
                 "assets/wasm/$fileName"
             }
 
-            // Initialize WASM module (this would be generated from the C++ engine)
-            // For now, this is a placeholder
-            wasmModule = window.asDynamic().FoundryEngine()
-            true
+            // Initialize WASM module with proper error handling
+            val wasmPromise = window.asDynamic().import("assets/wasm/foundry-engine.js") as Promise<dynamic>
+
+            // Wait for WASM module to load
+            wasmPromise.then { module: dynamic ->
+                wasmModule = module
+                console.log("WebAssembly module loaded successfully")
+                isConnected = true
+            }.catch { error: dynamic ->
+                console.warn("Failed to load WebAssembly module: ${error.message}")
+                isConnected = false
+            }
+
+            // For now, assume synchronous loading for simplicity
+            // In production, this should be properly async
+            wasmModule = window.asDynamic().FoundryEngine?.takeIf { it != undefined } ?: run {
+                console.warn("FoundryEngine not found in global scope")
+                null
+            }
+
+            wasmModule != null
         } catch (e: Exception) {
-            console.warn("WebAssembly not available, falling back to WebSocket")
+            console.warn("WebAssembly not available, falling back to WebSocket: ${e.message}")
             false
         }
     }

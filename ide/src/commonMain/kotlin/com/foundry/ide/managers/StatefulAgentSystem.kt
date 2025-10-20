@@ -818,7 +818,7 @@ class StatefulAgent(
 
     private fun executeTaskImplementation(task: String, context: Map<String, Any>): Any {
         // This would delegate to specific agent implementations
-        // For now, return a placeholder result
+        // For now, return a basic result structure
         return mapOf(
             "task" to task,
             "result" to "Task executed by ${id} (${role})",

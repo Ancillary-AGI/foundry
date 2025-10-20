@@ -456,14 +456,9 @@ private fun PerformancePanel() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Performance graph placeholder
+        // Performance graph
         Card(modifier = Modifier.fillMaxWidth().height(200.dp)) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Performance Graph", style = MaterialTheme.typography.caption)
-            }
+            PerformanceGraph()
         }
     }
 }
@@ -532,3 +527,86 @@ data class PerformanceMetrics(
     val drawCalls: Int,
     val triangleCount: Int
 )
+
+@Composable
+private fun PerformanceGraph() {
+    val fpsHistory = remember { mutableStateListOf<Float>() }
+    val frameTimeHistory = remember { mutableStateListOf<Float>() }
+    val maxDataPoints = 100
+
+    // Simulate data updates
+    LaunchedEffect(Unit) {
+        while (true) {
+            val metrics = GameSimulator().getPerformanceMetrics()
+            fpsHistory.add(metrics.fps)
+            frameTimeHistory.add(metrics.frameTime)
+
+            // Keep only recent data points
+            if (fpsHistory.size > maxDataPoints) {
+                fpsHistory.removeAt(0)
+                frameTimeHistory.removeAt(0)
+            }
+
+            kotlinx.coroutines.delay(1000) // Update every second
+        }
+    }
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val width = size.width
+        val height = size.height
+
+        if (fpsHistory.isNotEmpty()) {
+            val maxFps = 120f
+            val maxFrameTime = 33f // ~30 FPS
+
+            // Draw FPS graph (blue)
+            drawPath(
+                path = androidx.compose.ui.graphics.Path().apply {
+                    fpsHistory.forEachIndexed { index, fps ->
+                        val x = (index.toFloat() / fpsHistory.size) * width
+                        val y = height - (fps / maxFps) * height
+                        if (index == 0) moveTo(x, y) else lineTo(x, y)
+                    }
+                },
+                color = Color.Blue,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
+            )
+
+            // Draw frame time graph (red)
+            drawPath(
+                path = androidx.compose.ui.graphics.Path().apply {
+                    frameTimeHistory.forEachIndexed { index, frameTime ->
+                        val x = (index.toFloat() / frameTimeHistory.size) * width
+                        val y = height - (frameTime / maxFrameTime) * height
+                        if (index == 0) moveTo(x, y) else lineTo(x, y)
+                    }
+                },
+                color = Color.Red,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
+            )
+
+            // Draw grid lines
+            for (i in 0..4) {
+                val y = (i.toFloat() / 4) * height
+                drawLine(
+                    color = Color.Gray.copy(alpha = 0.3f),
+                    start = androidx.compose.ui.geometry.Offset(0f, y),
+                    end = androidx.compose.ui.geometry.Offset(width, y),
+                    strokeWidth = 1f
+                )
+            }
+        }
+
+        // Draw legend
+        drawRect(
+            color = Color.Blue,
+            topLeft = androidx.compose.ui.geometry.Offset(10f, 10f),
+            size = androidx.compose.ui.geometry.Size(20f, 10f)
+        )
+        drawRect(
+            color = Color.Red,
+            topLeft = androidx.compose.ui.geometry.Offset(10f, 25f),
+            size = androidx.compose.ui.geometry.Size(20f, 10f)
+        )
+    }
+}

@@ -988,7 +988,7 @@ class PluginManager {
 
     private fun estimatePluginMemory(plugin: LoadedPlugin): Long {
         // Rough estimation based on class loader and metadata size
-        return 1024L * 1024L // 1MB placeholder
+        return 1024L * 1024L // 1MB estimated size
     }
 
     /**

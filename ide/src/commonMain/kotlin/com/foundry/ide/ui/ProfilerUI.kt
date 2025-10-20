@@ -199,14 +199,9 @@ private fun PerformanceTab(profilerData: ProfilerData, isRecording: Boolean) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Performance graph placeholder
+        // Performance graph
         Card(modifier = Modifier.fillMaxWidth().height(200.dp)) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Performance Graph - ${if (isRecording) "Recording..." else "Paused"}")
-            }
+            PerformanceGraph(profilerData, isRecording)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -238,14 +233,9 @@ private fun MemoryTab(profilerData: ProfilerData) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Memory usage chart placeholder
+        // Memory usage chart
         Card(modifier = Modifier.fillMaxWidth().height(200.dp)) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Memory Usage Chart")
-            }
+            MemoryUsageChart(profilerData)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -298,14 +288,9 @@ private fun GPUTab(profilerData: ProfilerData) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // GPU usage chart placeholder
+        // GPU usage chart
         Card(modifier = Modifier.fillMaxWidth().height(200.dp)) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("GPU Usage Chart")
-            }
+            GPUUsageChart(profilerData)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -445,4 +430,248 @@ private fun formatBytes(bytes: Long): String {
     }
 
     return "%.1f %s".format(value, units[unitIndex])
+}
+
+@Composable
+private fun PerformanceGraph(profilerData: ProfilerData, isRecording: Boolean) {
+    val fpsHistory = remember { mutableStateListOf<Float>() }
+    val frameTimeHistory = remember { mutableStateListOf<Float>() }
+    val maxDataPoints = 100
+
+    // Simulate data updates when recording
+    LaunchedEffect(isRecording) {
+        if (isRecording) {
+            while (isRecording) {
+                // Add some variation to simulate real data
+                val baseFps = profilerData.fps
+                val baseFrameTime = profilerData.frameTime
+                val variation = (kotlin.random.Random.nextFloat() - 0.5f) * 10f
+
+                fpsHistory.add((baseFps + variation).coerceIn(30f, 120f))
+                frameTimeHistory.add((baseFrameTime + variation * 0.3f).coerceIn(8f, 33f))
+
+                // Keep only recent data points
+                if (fpsHistory.size > maxDataPoints) {
+                    fpsHistory.removeAt(0)
+                    frameTimeHistory.removeAt(0)
+                }
+
+                kotlinx.coroutines.delay(100) // Update 10 times per second
+            }
+        }
+    }
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val width = size.width
+        val height = size.height
+
+        if (fpsHistory.isNotEmpty()) {
+            val maxFps = 120f
+            val maxFrameTime = 33f // ~30 FPS
+
+            // Draw FPS graph (blue)
+            drawPath(
+                path = androidx.compose.ui.graphics.Path().apply {
+                    fpsHistory.forEachIndexed { index, fps ->
+                        val x = (index.toFloat() / fpsHistory.size) * width
+                        val y = height - (fps / maxFps) * height
+                        if (index == 0) moveTo(x, y) else lineTo(x, y)
+                    }
+                },
+                color = Color.Blue,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
+            )
+
+            // Draw frame time graph (red)
+            drawPath(
+                path = androidx.compose.ui.graphics.Path().apply {
+                    frameTimeHistory.forEachIndexed { index, frameTime ->
+                        val x = (index.toFloat() / frameTimeHistory.size) * width
+                        val y = height - (frameTime / maxFrameTime) * height
+                        if (index == 0) moveTo(x, y) else lineTo(x, y)
+                    }
+                },
+                color = Color.Red,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
+            )
+
+            // Draw grid lines
+            for (i in 0..4) {
+                val y = (i.toFloat() / 4) * height
+                drawLine(
+                    color = Color.Gray.copy(alpha = 0.3f),
+                    start = androidx.compose.ui.geometry.Offset(0f, y),
+                    end = androidx.compose.ui.geometry.Offset(width, y),
+                    strokeWidth = 1f
+                )
+            }
+        }
+
+        // Draw legend
+        drawRect(
+            color = Color.Blue,
+            topLeft = androidx.compose.ui.geometry.Offset(10f, 10f),
+            size = androidx.compose.ui.geometry.Size(20f, 10f)
+        )
+        drawRect(
+            color = Color.Red,
+            topLeft = androidx.compose.ui.geometry.Offset(10f, 25f),
+            size = androidx.compose.ui.geometry.Size(20f, 10f)
+        )
+    }
+
+    // Status overlay
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp),
+        contentAlignment = Alignment.TopEnd
+    ) {
+        Text(
+            text = if (isRecording) "● Recording" else "⏸ Paused",
+            style = MaterialTheme.typography.caption,
+            color = if (isRecording) Color.Red else Color.Gray
+        )
+    }
+}
+
+@Composable
+private fun MemoryUsageChart(profilerData: ProfilerData) {
+    val memoryHistory = remember { mutableStateListOf<Long>() }
+    val maxDataPoints = 100
+
+    // Simulate memory usage over time
+    LaunchedEffect(Unit) {
+        while (true) {
+            val baseMemory = profilerData.memoryUsage
+            val variation = (kotlin.random.Random.nextLong() % (50L * 1024 * 1024)) - (25L * 1024 * 1024)
+            memoryHistory.add((baseMemory + variation).coerceIn(100L * 1024 * 1024, 1000L * 1024 * 1024))
+
+            if (memoryHistory.size > maxDataPoints) {
+                memoryHistory.removeAt(0)
+            }
+
+            kotlinx.coroutines.delay(500) // Update twice per second
+        }
+    }
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val width = size.width
+        val height = size.height
+
+        if (memoryHistory.isNotEmpty()) {
+            val maxMemory = 1000L * 1024 * 1024 // 1GB max for display
+
+            // Draw memory usage graph
+            drawPath(
+                path = androidx.compose.ui.graphics.Path().apply {
+                    memoryHistory.forEachIndexed { index, memory ->
+                        val x = (index.toFloat() / memoryHistory.size) * width
+                        val y = height - (memory.toFloat() / maxMemory) * height
+                        if (index == 0) moveTo(x, y) else lineTo(x, y)
+                    }
+                },
+                color = Color.Green,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
+            )
+
+            // Draw grid lines
+            for (i in 0..4) {
+                val y = (i.toFloat() / 4) * height
+                drawLine(
+                    color = Color.Gray.copy(alpha = 0.3f),
+                    start = androidx.compose.ui.geometry.Offset(0f, y),
+                    end = androidx.compose.ui.geometry.Offset(width, y),
+                    strokeWidth = 1f
+                )
+            }
+        }
+    }
+
+    // Current memory display
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp),
+        contentAlignment = Alignment.TopEnd
+    ) {
+        Text(
+            text = "Current: ${formatBytes(profilerData.memoryUsage)}",
+            style = MaterialTheme.typography.caption,
+            color = Color.Green
+        )
+    }
+}
+
+@Composable
+private fun GPUUsageChart(profilerData: ProfilerData) {
+    val gpuUsageHistory = remember { mutableStateListOf<Float>() }
+    val maxDataPoints = 100
+
+    // Simulate GPU usage over time
+    LaunchedEffect(Unit) {
+        while (true) {
+            val baseUsage = profilerData.cpuUsage * 0.8f // GPU typically less than CPU
+            val variation = (kotlin.random.Random.nextFloat() - 0.5f) * 20f
+            gpuUsageHistory.add((baseUsage + variation).coerceIn(10f, 95f))
+
+            if (gpuUsageHistory.size > maxDataPoints) {
+                gpuUsageHistory.removeAt(0)
+            }
+
+            kotlinx.coroutines.delay(200) // Update 5 times per second
+        }
+    }
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val width = size.width
+        val height = size.height
+
+        if (gpuUsageHistory.isNotEmpty()) {
+            // Draw GPU usage graph
+            drawPath(
+                path = androidx.compose.ui.graphics.Path().apply {
+                    gpuUsageHistory.forEachIndexed { index, usage ->
+                        val x = (index.toFloat() / gpuUsageHistory.size) * width
+                        val y = height - (usage / 100f) * height
+                        if (index == 0) moveTo(x, y) else lineTo(x, y)
+                    }
+                },
+                color = Color.Cyan,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
+            )
+
+            // Draw grid lines
+            for (i in 0..4) {
+                val y = (i.toFloat() / 4) * height
+                drawLine(
+                    color = Color.Gray.copy(alpha = 0.3f),
+                    start = androidx.compose.ui.geometry.Offset(0f, y),
+                    end = androidx.compose.ui.geometry.Offset(width, y),
+                    strokeWidth = 1f
+                )
+            }
+        }
+    }
+
+    // GPU memory display
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp),
+        contentAlignment = Alignment.TopEnd
+    ) {
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = "GPU Memory: ${formatBytes(profilerData.gpuMemory)}",
+                style = MaterialTheme.typography.caption,
+                color = Color.Cyan
+            )
+            Text(
+                text = "Triangles: ${profilerData.triangles}",
+                style = MaterialTheme.typography.caption,
+                color = Color.Magenta
+            )
+        }
+    }
 }

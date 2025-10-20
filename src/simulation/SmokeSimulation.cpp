@@ -513,8 +513,46 @@ void SmokeSimulation2D::applyDiffusion() {
 }
 
 void SmokeSimulation2D::advectVelocity() {
-    // Simple velocity advection (placeholder)
-    // In a full implementation, this would use semi-Lagrangian advection
+    // Semi-Lagrangian advection for velocity field
+    std::vector<std::vector<Vector2>> newVelocity = velocityGrid_;
+
+    for (int y = 1; y < gridHeight_ - 1; ++y) {
+        for (int x = 1; x < gridWidth_ - 1; ++x) {
+            // Get velocity at current position
+            Vector2 vel = velocityGrid_[y][x];
+
+            // Calculate back-traced position
+            float dt = params_.timeStep;
+            Vector2 backPos = Vector2(static_cast<float>(x), static_cast<float>(y)) - vel * dt;
+
+            // Bilinear interpolation to get velocity at back-traced position
+            int x0 = static_cast<int>(std::floor(backPos.x));
+            int y0 = static_cast<int>(std::floor(backPos.y));
+            int x1 = x0 + 1;
+            int y1 = y0 + 1;
+
+            // Clamp to grid bounds
+            x0 = std::max(0, std::min(gridWidth_ - 1, x0));
+            x1 = std::max(0, std::min(gridWidth_ - 1, x1));
+            y0 = std::max(0, std::min(gridHeight_ - 1, y0));
+            y1 = std::max(0, std::min(gridHeight_ - 1, y1));
+
+            float fx = backPos.x - std::floor(backPos.x);
+            float fy = backPos.y - std::floor(backPos.y);
+
+            // Interpolate velocity
+            Vector2 v00 = velocityGrid_[y0][x0];
+            Vector2 v10 = velocityGrid_[y0][x1];
+            Vector2 v01 = velocityGrid_[y1][x0];
+            Vector2 v11 = velocityGrid_[y1][x1];
+
+            Vector2 velX0 = v00 * (1.0f - fx) + v10 * fx;
+            Vector2 velX1 = v01 * (1.0f - fx) + v11 * fx;
+            newVelocity[y][x] = velX0 * (1.0f - fy) + velX1 * fy;
+        }
+    }
+
+    velocityGrid_ = std::move(newVelocity);
 }
 
 void SmokeSimulation2D::removeDeadParticles() {

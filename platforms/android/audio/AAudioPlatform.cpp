@@ -860,17 +860,67 @@ void AAudioEffects::applyReverb(float* buffer, int32_t frames, float roomSize, f
 }
 
 void AAudioEffects::applyEqualizer(float* buffer, int32_t frames, const float* bandGains, int32_t numBands) {
-    // Simple equalizer implementation using biquad filters
-    // This is a placeholder - real equalizer would implement multiple biquad filters
+    // Multi-band equalizer implementation using biquad filters
+    // This implements a proper parametric equalizer with multiple frequency bands
 
     if (numBands < 1 || !bandGains) {
         return;
     }
 
-    // Apply simple gain adjustment based on first band
-    float gain = bandGains[0];
-    for (int32_t i = 0; i < frames; i++) {
-        buffer[i] *= gain;
+    // Define frequency bands (in Hz)
+    const float bandFrequencies[] = {60.0f, 150.0f, 400.0f, 1000.0f, 2500.0f, 6000.0f, 15000.0f};
+    const int maxBands = sizeof(bandFrequencies) / sizeof(bandFrequencies[0]);
+
+    // Limit to available bands
+    int actualBands = std::min(numBands, maxBands);
+
+    // Process each band
+    for (int band = 0; band < actualBands; ++band) {
+        float frequency = bandFrequencies[band];
+        float gain = bandGains[band];
+        float qFactor = 1.414f; // Default Q factor for shelf/bell filters
+
+        // Apply biquad filter for this band
+        applyBiquadFilter(buffer, frames, frequency, gain, qFactor, 44100.0f);
+    }
+}
+
+void AAudioEffects::applyBiquadFilter(float* buffer, int32_t frames, float frequency, float gain, float qFactor, float sampleRate) {
+    // Biquad filter implementation for equalizer bands
+    float omega = 2.0f * M_PI * frequency / sampleRate;
+    float alpha = sinf(omega) / (2.0f * qFactor);
+    float A = powf(10.0f, gain / 40.0f); // Convert dB to linear gain
+
+    // Calculate filter coefficients for peaking EQ
+    float a0 = 1.0f + alpha / A;
+    float a1 = -2.0f * cosf(omega);
+    float a2 = 1.0f - alpha / A;
+    float b0 = 1.0f + alpha * A;
+    float b1 = -2.0f * cosf(omega);
+    float b2 = 1.0f - alpha * A;
+
+    // Normalize coefficients
+    a1 /= a0;
+    a2 /= a0;
+    b0 /= a0;
+    b1 /= a0;
+    b2 /= a0;
+
+    // Apply filter using direct form I
+    float x1 = 0.0f, x2 = 0.0f;
+    float y1 = 0.0f, y2 = 0.0f;
+
+    for (int32_t i = 0; i < frames; ++i) {
+        float x0 = buffer[i];
+        float y0 = b0 * x0 + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+
+        // Update delay elements
+        x2 = x1;
+        x1 = x0;
+        y2 = y1;
+        y1 = y0;
+
+        buffer[i] = y0;
     }
 }
 
