@@ -1,6 +1,6 @@
 /**
- * @file NativeTypeScriptInterface.h
- * @brief Direct native interface between TypeScript and C++ engine APIs
+ * @file TypeScriptInterface.h
+ * @brief Native interface between TypeScript and C++ engine APIs
  * @author FoundryEngine Team
  * @date 2024
  * @version 2.0.0
@@ -16,10 +16,10 @@
 namespace FoundryEngine {
 
 /**
- * @class NativeTypeScriptInterface
- * @brief Direct native interface - no bridge, direct memory access and function calls
+ * @class TypeScriptInterface
+ * @brief Native interface - no bridge, direct memory access and function calls
  */
-class NativeTypeScriptInterface {
+class TypeScriptInterface {
 public:
     // Direct native function pointers for TypeScript runtime
     struct NativeAPI {

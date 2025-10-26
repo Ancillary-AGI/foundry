@@ -1,11 +1,11 @@
 /**
- * @file AdvancedRenderPipeline.h
- * @brief Next-generation rendering pipeline with ray tracing, volumetrics, and NeRF support
+ * @file RenderPipeline.h
+ * @brief Rendering pipeline with ray tracing, volumetrics, and NeRF support
  * @author FoundryEngine Team
  * @date 2024
  * @version 2.0.0
  *
- * This file contains the advanced rendering pipeline for FoundryEngine.
+ * This file contains the rendering pipeline for FoundryEngine.
  * Features include hardware ray tracing, volumetric rendering, Neural Radiance Fields,
  * point cloud rendering, and advanced post-processing effects.
  *

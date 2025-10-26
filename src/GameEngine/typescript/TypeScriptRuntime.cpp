@@ -1,9 +1,9 @@
 /**
- * @file AdvancedTypeScriptRuntime.cpp
- * @brief Implementation of advanced TypeScript runtime with JIT compilation
+ * @file TypeScriptRuntime.cpp
+ * @brief Implementation of TypeScript runtime with JIT compilation
  */
 
-#include "GameEngine/typescript/AdvancedTypeScriptRuntime.h"
+#include "GameEngine/typescript/TypeScriptRuntime.h"
 #include <thread>
 #include <fstream>
 #include <sstream>

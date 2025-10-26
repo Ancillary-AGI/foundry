@@ -8,6 +8,8 @@
 
 **Foundry Engine** is the most ambitious game development platform ever created, combining cutting-edge technology with developer-first design principles. Built from the ground up with **native TypeScript support**, **AI-powered development tools**, and **universal platform deployment**.
 
+> 📖 **[Complete Implementation Guide](FOUNDRY_ENGINE_COMPLETE.md)** - Comprehensive documentation of all features and implementation details
+
 ---
 
 ## 🌟 **Key Features**

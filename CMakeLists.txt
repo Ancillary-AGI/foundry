@@ -64,8 +64,8 @@ set(FOUNDRY_CORE_SOURCES
     # Core systems
     src/GameEngine/core/Engine.cpp
     src/GameEngine/core/System.cpp
-    src/GameEngine/core/EnhancedECS.cpp
-    src/GameEngine/core/AdvancedMemoryManager.cpp
+    src/GameEngine/core/ECS.cpp
+    src/GameEngine/core/MemoryManager.cpp
     
     # Math library
     src/GameEngine/math/Vector2.cpp
@@ -75,17 +75,17 @@ set(FOUNDRY_CORE_SOURCES
     src/GameEngine/math/Quaternion.cpp
     
     # Graphics systems
-    src/GameEngine/graphics/AdvancedRenderPipeline.cpp
+    src/GameEngine/graphics/RenderPipeline.cpp
     src/GameEngine/graphics/VulkanRenderer.cpp
     src/GameEngine/graphics/RayTracingSystem.cpp
     
     # Physics systems
-    src/GameEngine/physics/AdvancedPhysicsSystem.cpp
+    src/GameEngine/physics/PhysicsSystem.cpp
     src/GameEngine/physics/FluidSimulation.cpp
     src/GameEngine/physics/ClothPhysics.cpp
     
     # Audio systems
-    src/GameEngine/audio/AdvancedAudioSystem.cpp
+    src/GameEngine/audio/AudioSystem.cpp
     src/GameEngine/audio/SpatialAudio.cpp
     src/GameEngine/audio/ProceduralAudio.cpp
     
@@ -95,7 +95,7 @@ set(FOUNDRY_CORE_SOURCES
     src/GameEngine/ai/BehaviorTree.cpp
     
     # Networking
-    src/GameEngine/networking/AdvancedNetworkSystem.cpp
+    src/GameEngine/networking/NetworkSystem.cpp
     src/GameEngine/networking/NetworkPrediction.cpp
     src/GameEngine/networking/AntiCheat.cpp
     
@@ -121,12 +121,12 @@ set(FOUNDRY_CORE_SOURCES
     src/GameEngine/mobile/MobileUI.cpp
     
     # Character systems
-    src/GameEngine/character/AdvancedCharacterSystem.cpp
+    src/GameEngine/character/CharacterSystem.cpp
     src/GameEngine/character/ProceduralGeneration.cpp
     src/GameEngine/character/AnimationSystem.cpp
     
     # TypeScript runtime
-    src/GameEngine/typescript/AdvancedTypeScriptRuntime.cpp
+    src/GameEngine/typescript/TypeScriptRuntime.cpp
     src/GameEngine/typescript/TypeScriptJITCompiler.cpp
     src/GameEngine/typescript/TypeScriptModule.cpp
     
@@ -174,7 +174,7 @@ endif()
 
 # TypeScript runtime library
 add_library(FoundryTypeScript SHARED
-    src/GameEngine/typescript/AdvancedTypeScriptRuntime.cpp
+    src/GameEngine/typescript/TypeScriptRuntime.cpp
     src/GameEngine/typescript/TypeScriptJITCompiler.cpp
     src/GameEngine/typescript/TypeScriptModule.cpp
     src/GameEngine/typescript/TypeScriptValue.cpp

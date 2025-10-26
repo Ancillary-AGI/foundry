@@ -1,10 +1,10 @@
 /**
- * @file EnhancedECS.cpp
- * @brief Implementation of enhanced Entity Component System with SIMD optimization
+ * @file ECS.cpp
+ * @brief Implementation of Entity Component System with SIMD optimization
  */
 
-#include "GameEngine/core/EnhancedECS.h"
-#include "GameEngine/core/AdvancedMemoryManager.h"
+#include "GameEngine/core/ECS.h"
+#include "GameEngine/core/MemoryManager.h"
 #include <algorithm>
 #include <immintrin.h>
 

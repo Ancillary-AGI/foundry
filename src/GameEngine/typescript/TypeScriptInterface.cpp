@@ -1,12 +1,12 @@
 /**
- * @file NativeTypeScriptInterface.cpp
- * @brief Implementation of direct native TypeScript interface
+ * @file TypeScriptInterface.cpp
+ * @brief Implementation of native TypeScript interface
  */
 
-#include "GameEngine/typescript/NativeTypeScriptInterface.h"
-#include "GameEngine/core/EnhancedECS.h"
-#include "GameEngine/physics/AdvancedPhysicsSystem.h"
-#include "GameEngine/graphics/AdvancedRenderPipeline.h"
+#include "GameEngine/typescript/TypeScriptInterface.h"
+#include "GameEngine/core/ECS.h"
+#include "GameEngine/physics/PhysicsSystem.h"
+#include "GameEngine/graphics/RenderPipeline.h"
 #include <unordered_map>
 #include <memory>
 

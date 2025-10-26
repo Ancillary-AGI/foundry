@@ -1,6 +1,6 @@
 /**
- * @file AdvancedAudioSystem.h
- * @brief Advanced 3D spatial audio system with procedural generation
+ * @file AudioSystem.h
+ * @brief 3D spatial audio system with procedural generation
  * @author FoundryEngine Team
  * @date 2024
  * @version 2.0.0

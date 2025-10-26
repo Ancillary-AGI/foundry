@@ -1,9 +1,9 @@
 /**
- * @file AdvancedAudioSystem.cpp
- * @brief Implementation of advanced 3D spatial audio system
+ * @file AudioSystem.cpp
+ * @brief Implementation of 3D spatial audio system
  */
 
-#include "GameEngine/audio/AdvancedAudioSystem.h"
+#include "GameEngine/audio/AudioSystem.h"
 #include <algorithm>
 #include <thread>
 #include <cmath>

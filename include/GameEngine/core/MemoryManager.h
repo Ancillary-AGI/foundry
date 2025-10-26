@@ -1,6 +1,6 @@
 /**
- * @file AdvancedMemoryManager.h
- * @brief Advanced memory management system with SIMD optimization and pooling
+ * @file MemoryManager.h
+ * @brief Memory management system with SIMD optimization and pooling
  * @author FoundryEngine Team
  * @date 2024
  * @version 2.0.0

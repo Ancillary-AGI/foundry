@@ -1,9 +1,9 @@
 /**
- * @file AdvancedMemoryManager.cpp
- * @brief Implementation of advanced memory management system
+ * @file MemoryManager.cpp
+ * @brief Implementation of memory management system
  */
 
-#include "GameEngine/core/AdvancedMemoryManager.h"
+#include "GameEngine/core/MemoryManager.h"
 #include <algorithm>
 #include <cstring>
 #include <immintrin.h>

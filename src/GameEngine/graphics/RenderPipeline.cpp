@@ -1,9 +1,9 @@
 /**
- * @file AdvancedRenderPipeline.cpp
- * @brief Implementation of advanced rendering pipeline with ray tracing and NeRF
+ * @file RenderPipeline.cpp
+ * @brief Implementation of rendering pipeline with ray tracing and NeRF
  */
 
-#include "GameEngine/graphics/AdvancedRenderPipeline.h"
+#include "GameEngine/graphics/RenderPipeline.h"
 #include <algorithm>
 #include <thread>
 

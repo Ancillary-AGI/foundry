@@ -1,11 +1,11 @@
 /**
- * @file EnhancedECS.h
- * @brief Enhanced Entity-Component-System with SIMD optimizations and hierarchical support
+ * @file ECS.h
+ * @brief Entity-Component-System with SIMD optimizations and hierarchical support
  * @author FoundryEngine Team
  * @date 2024
  * @version 2.0.0
  *
- * This file contains the next-generation ECS architecture for FoundryEngine.
+ * This file contains the ECS architecture for FoundryEngine.
  * Features include SIMD-optimized component operations, hierarchical entity
  * relationships, advanced memory management, and automatic system parallelization.
  *

@@ -1,11 +1,11 @@
 /**
- * @file AdvancedTypeScriptRuntime.h
- * @brief Advanced TypeScript Runtime with JIT compilation and native performance
+ * @file TypeScriptRuntime.h
+ * @brief TypeScript Runtime with JIT compilation and native performance
  * @author FoundryEngine Team
  * @date 2024
  * @version 2.0.0
  *
- * This file contains the next-generation TypeScript runtime for FoundryEngine.
+ * This file contains the TypeScript runtime for FoundryEngine.
  * Features include JIT compilation to native code, hot module replacement,
  * advanced type system support, and zero-copy data exchange with C++.
  *
