@@ -38,8 +38,8 @@ public:
     void setHeight(int height) override { height_ = height; }
 
     PlatformGraphicsContext* getContext(const std::string& contextType) override;
-    void addEventListener(const std::string& event, std::function<void(const InputEvent&)> listener) override {}
-    void removeEventListener(const std::string& event, std::function<void(const InputEvent&)> listener) override {}
+    void addEventListener(const std::string& event, std::function<void(const InputEvent&)> listener) override;
+    void removeEventListener(const std::string& event, std::function<void(const InputEvent&)> listener) override;
 };
 
 class AndroidGraphics : public PlatformGraphics {
@@ -51,8 +51,8 @@ public:
 class AndroidAudio : public PlatformAudio {
 public:
     std::unique_ptr<PlatformAudioContext> createContext() override;
-    void resume() override {}
-    void suspend() override {}
+    void resume() override;
+    void suspend() override;
 };
 
 class AndroidInput : public PlatformInputManager {
@@ -65,9 +65,9 @@ public:
     AndroidInput(JNIEnv* env, jobject inputManager);
     ~AndroidInput();
 
-    std::unordered_map<int, bool> getKeyboardState() override { return {}; }
-    MouseState getMouseState() override { return {0, 0, {}}; }
-    std::vector<TouchPoint> getTouchState() override { return {}; }
+    std::unordered_map<int, bool> getKeyboardState() override;
+    MouseState getMouseState() override;
+    std::vector<TouchPoint> getTouchState() override;
     GamepadState getGamepadState(int index) override;
     std::vector<GamepadState> getConnectedGamepads() override;
     int getGamepadCount() override;
@@ -75,8 +75,8 @@ public:
     std::string getGamepadName(int index) override;
     bool setGamepadVibration(int index, float leftMotor, float rightMotor, float duration) override;
 
-    void addEventListener(const std::string& type, std::function<void(const InputEvent&)> listener) override {}
-    void removeEventListener(const std::string& type, std::function<void(const InputEvent&)> listener) override {}
+    void addEventListener(const std::string& type, std::function<void(const InputEvent&)> listener) override;
+    void removeEventListener(const std::string& type, std::function<void(const InputEvent&)> listener) override;
 
     // Android-specific methods
     void updateGamepadStates();
@@ -86,38 +86,38 @@ public:
 
 class AndroidFileSystem : public PlatformFileSystem {
 public:
-    std::vector<uint8_t> readFile(const std::string& path) override { return {}; }
-    void writeFile(const std::string& path, const std::vector<uint8_t>& data) override {}
-    void deleteFile(const std::string& path) override {}
-    std::vector<std::string> listFiles(const std::string& directory) override { return {}; }
-    void createDirectory(const std::string& path) override {}
-    bool exists(const std::string& path) override { return false; }
+    std::vector<uint8_t> readFile(const std::string& path) override;
+    void writeFile(const std::string& path, const std::vector<uint8_t>& data) override;
+    void deleteFile(const std::string& path) override;
+    std::vector<std::string> listFiles(const std::string& directory) override;
+    void createDirectory(const std::string& path) override;
+    bool exists(const std::string& path) override;
 };
 
 class AndroidNetworking : public PlatformNetworking {
 public:
     std::unique_ptr<PlatformWebSocket> connect(const std::string& url) override;
-    std::vector<uint8_t> httpGet(const std::string& url) override { return {}; }
-    std::vector<uint8_t> httpPost(const std::string& url, const std::vector<uint8_t>& data) override { return {}; }
+    std::vector<uint8_t> httpGet(const std::string& url) override;
+    std::vector<uint8_t> httpPost(const std::string& url, const std::vector<uint8_t>& data) override;
 };
 
 class AndroidTimer : public PlatformTimer {
 public:
-    double now() override { return 0.0; }
-    int setTimeout(std::function<void()> callback, int delay) override { return 0; }
-    void clearTimeout(int id) override {}
-    int setInterval(std::function<void()> callback, int delay) override { return 0; }
-    void clearInterval(int id) override {}
-    int requestAnimationFrame(std::function<void(double)> callback) override { return 0; }
-    void cancelAnimationFrame(int id) override {}
+    double now() override;
+    int setTimeout(std::function<void()> callback, int delay) override;
+    void clearTimeout(int id) override;
+    int setInterval(std::function<void()> callback, int delay) override;
+    void clearInterval(int id) override;
+    int requestAnimationFrame(std::function<void(double)> callback) override;
+    void cancelAnimationFrame(int id) override;
 };
 
 class AndroidRandom : public PlatformRandom {
 public:
-    double random() override { return 0.0; }
-    int randomInt(int min, int max) override { return min; }
-    double randomFloat(double min, double max) override { return min; }
-    void seed(unsigned int seed) override {}
+    double random() override;
+    int randomInt(int min, int max) override;
+    double randomFloat(double min, double max) override;
+    void seed(unsigned int seed) override;
 };
 
 // Android-specific classes

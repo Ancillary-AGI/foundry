@@ -1,131 +1,75 @@
-# Android CMake Configuration for FoundryEngine
-cmake_minimum_required(VERSION 3.18)
+# Android Platform CMake Configuration
+cmake_minimum_required(VERSION 3.18.1)
 
-# Set Android ABI
-set(ANDROID_ABI armeabi-v7a arm64-v8a x86 x86_64)
-
-# Set Android platform level (API 21 = Android 5.0)
-set(ANDROID_PLATFORM android-21)
-
-# Set Android STL
-set(ANDROID_STL c++_static)
-
-# Project configuration
 project(FoundryEngineAndroid)
 
-# Enable C++17
+# Set Android-specific flags
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find Android NDK
-find_package(AndroidNdk REQUIRED)
+# Find required packages
+find_library(log-lib log)
+find_library(android-lib android)
+find_library(EGL-lib EGL)
+find_library(GLESv3-lib GLESv3)
 
 # Include directories
 include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../..
     ${ANDROID_NDK}/sources/android/native_app_glue
-    ${ANDROID_NDK}/sources/android/cpufeatures
-    ../../include
-    ../../src
 )
 
 # Source files
-set(SOURCES
-    AndroidPlatform.cpp
-    core/AndroidPlatformPAL.h
-    core/PlatformServices.cpp
-    core/PlatformServices.h
-    audio/AAudioPlatform.cpp
-    audio/AAudioPlatform.h
-    graphics/VulkanPlatform.cpp
-    graphics/VulkanPlatform.h
-    graphics/GPUDebugger.cpp
-    graphics/GPUDebugger.h
-    input/GestureManager.cpp
-    input/GestureManager.h
-    input/StylusManager.cpp
-    input/StylusManager.h
-    network/EnhancedNetworking.cpp
-    network/EnhancedNetworking.h
-    system/AccessibilityManager.cpp
-    system/AccessibilityManager.h
-    system/PushNotificationManager.cpp
-    system/PushNotificationManager.h
-    system/ScopedStorageManager.cpp
-    system/ScopedStorageManager.h
-    system/ThermalManager.cpp
-    system/ThermalManager.h
-    system/BackgroundTaskManager.h
-    ../../src/main.cpp
-    ../../src/core/*.cpp
-    ../../src/math/*.cpp
-    ../../src/graphics/*.cpp
-    ../../src/physics/*.cpp
-    ../../src/ai/*.cpp
-    ../../src/animation/*.cpp
-    ../../src/networking/*.cpp
-    ../../src/systems/*.cpp
-    ../../src/world/*.cpp
-    ../../src/components/*.cpp
-    ../../src/optimization/*.cpp
+set(ANDROID_PLATFORM_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/AndroidPlatform.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AndroidFileSystem.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AndroidTimer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AndroidNetworking.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AndroidRandom.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/graphics.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/input.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/network.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/system.cpp
 )
 
-# Create shared library
-add_library(foundryengine SHARED ${SOURCES})
+# Create Android platform library
+add_library(foundry-android SHARED ${ANDROID_PLATFORM_SOURCES})
 
 # Link libraries
-target_link_libraries(foundryengine
-    android
-    log
-    EGL
-    GLESv3
-    OpenSLES
-    z
-    m
-    c
+target_link_libraries(foundry-android
+    ${log-lib}
+    ${android-lib}
+    ${EGL-lib}
+    ${GLESv3-lib}
+    curl  # For HTTP networking
+    vulkan  # For Vulkan support
 )
 
-# Set target properties
-set_target_properties(foundryengine PROPERTIES
-    OUTPUT_NAME "foundryengine"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+# Compiler definitions
+target_compile_definitions(foundry-android PRIVATE
+    ANDROID_PLATFORM=1
+    VULKAN_SUPPORT=1
+    GLES3_SUPPORT=1
 )
 
-# Android-specific compile options
-target_compile_options(foundryengine PRIVATE
+# Compiler flags
+target_compile_options(foundry-android PRIVATE
     -Wall
     -Wextra
-    -Wpedantic
-    -Wno-unused-parameter
-    -Wno-unused-variable
-    -Wno-missing-field-initializers
+    -O3
     -ffast-math
-    -funroll-loops
-    -fomit-frame-pointer
-    -march=armv7-a
-    -mtune=cortex-a8
-    -mfloat-abi=softfp
-    -mfpu=vfpv3-d16
-    -DANDROID
-    -D__ANDROID__
-    -D__ARM_ARCH_7__
-    -D__ARM_ARCH_7A__
+    -fno-exceptions
+    -fno-rtti
 )
 
-# ARM64 specific options
-target_compile_options(foundryengine PRIVATE
-    $<$<CONFIG:Release>:-O3>
-    $<$<CONFIG:Debug>:-O0 -g>
+# Export symbols for JNI
+set_target_properties(foundry-android PROPERTIES
+    LINK_FLAGS "-Wl,--export-dynamic"
 )
 
-# Set Android NDK properties
-android_ndk_import_module_cpufeatures()
-android_ndk_import_module_native_app_glue()
-
-# Create APK target
-set(APK_NAME "FoundryEngine.apk")
-set(APK_OUTPUT_PATH "${CMAKE_BINARY_DIR}/${APK_NAME}")
-
-# Package APK (this would be done by Gradle in practice)
-# For now, just create the native library
+# Install target
+install(TARGETS foundry-android
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)

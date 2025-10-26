@@ -1,248 +1,243 @@
-cmake_minimum_required(VERSION 3.16)
-project(FoundryEngine VERSION 1.0.0 LANGUAGES CXX C)
+cmake_minimum_required(VERSION 3.20)
+project(FoundryEngine VERSION 2.0.0 LANGUAGES CXX C)
 
+# Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Build configuration
+option(FOUNDRY_BUILD_TESTS "Build tests" ON)
+option(FOUNDRY_BUILD_EXAMPLES "Build examples" ON)
+option(FOUNDRY_ENABLE_SIMD "Enable SIMD optimizations" ON)
+option(FOUNDRY_ENABLE_VULKAN "Enable Vulkan support" ON)
+option(FOUNDRY_ENABLE_RAYTRACING "Enable ray tracing" ON)
+option(FOUNDRY_ENABLE_VR "Enable VR support" ON)
+option(FOUNDRY_ENABLE_NETWORKING "Enable networking" ON)
+option(FOUNDRY_ENABLE_AI "Enable AI systems" ON)
 
 # Platform detection
 if(WIN32)
-    set(PLATFORM_WINDOWS TRUE)
-elseif(UNIX AND NOT APPLE)
-    set(PLATFORM_LINUX TRUE)
+    set(FOUNDRY_PLATFORM "Windows")
+    add_definitions(-DFOUNDRY_PLATFORM_WINDOWS)
 elseif(APPLE)
-    set(PLATFORM_MACOS TRUE)
+    set(FOUNDRY_PLATFORM "macOS")
+    add_definitions(-DFOUNDRY_PLATFORM_MACOS)
+elseif(UNIX)
+    set(FOUNDRY_PLATFORM "Linux")
+    add_definitions(-DFOUNDRY_PLATFORM_LINUX)
 endif()
 
-# Build configuration
-option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-option(BUILD_EXAMPLES "Build example applications" ON)
-option(BUILD_TESTS "Build unit tests" ON)
-option(ENABLE_PROFILING "Enable profiling support" ON)
-option(ENABLE_NETWORKING "Enable networking support" ON)
-option(ENABLE_SCRIPTING "Enable scripting support" ON)
-option(ENABLE_PHYSICS "Enable physics support" ON)
-option(ENABLE_AUDIO "Enable audio support" ON)
-
-# Compiler-specific options
+# Compiler-specific settings
 if(MSVC)
     add_compile_options(/W4 /WX /permissive-)
-    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-else()
+    add_compile_options(/arch:AVX2) # Enable SIMD
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     add_compile_options(-Wall -Wextra -Werror -pedantic)
+    add_compile_options(-mavx2 -mfma) # Enable SIMD
 endif()
 
 # Debug/Release configurations
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_definitions(DEBUG _DEBUG)
-    if(MSVC)
-        add_compile_options(/Od /Zi)
-    else()
-        add_compile_options(-O0 -g)
-    endif()
+    add_definitions(-DFOUNDRY_DEBUG)
+    add_compile_options(-g -O0)
 else()
-    add_compile_definitions(NDEBUG)
-    if(MSVC)
-        add_compile_options(/O2)
-    else()
-        add_compile_options(-O3 -DNDEBUG)
-    endif()
+    add_definitions(-DFOUNDRY_RELEASE)
+    add_compile_options(-O3 -DNDEBUG)
 endif()
 
 # Find required packages
+find_package(Vulkan REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(Threads REQUIRED)
 
-# Platform-specific dependencies
-if(PLATFORM_WINDOWS)
-    find_package(DirectX QUIET)
-endif()
-
-if(PLATFORM_LINUX)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(SDL2 REQUIRED sdl2)
-    pkg_check_modules(OPENAL REQUIRED openal)
-endif()
-
-# Third-party libraries
-set(THIRD_PARTY_DIR ${CMAKE_SOURCE_DIR}/third_party)
-
-# Bullet Physics (if enabled)
-if(ENABLE_PHYSICS)
-    find_package(Bullet QUIET)
-    if(NOT Bullet_FOUND)
-        message(STATUS "Bullet Physics not found, using built-in version")
-        add_subdirectory(${THIRD_PARTY_DIR}/bullet3 EXCLUDE_FROM_ALL)
-        set(BULLET_LIBRARIES BulletDynamics BulletCollision LinearMath)
-    endif()
-endif()
-
-# Lua (if scripting enabled)
-if(ENABLE_SCRIPTING)
-    find_package(Lua QUIET)
-    if(NOT LUA_FOUND)
-        message(STATUS "Lua not found, using built-in version")
-        add_subdirectory(${THIRD_PARTY_DIR}/lua EXCLUDE_FROM_ALL)
-        set(LUA_LIBRARIES lua)
-    endif()
-endif()
-
-# OpenAL (if audio enabled)
-if(ENABLE_AUDIO AND NOT PLATFORM_WINDOWS)
-    if(NOT OPENAL_FOUND)
-        find_package(OpenAL REQUIRED)
-    endif()
-endif()
-
-# Engine source files
-set(ENGINE_SOURCES
-    src/Engine.cpp
-    src/main.cpp
-    src/World.cpp
-    src/Scene.cpp
-    src/MemoryPool.cpp
-    src/SerializationSystem.cpp
-    src/networking/UDPNetworking.cpp
-    src/systems/AssetSystem.cpp
-    src/systems/AssetPipeline.cpp
-    src/systems/AudioSystem.cpp
-    src/systems/InputSystem.cpp
-    src/systems/PhysicsSystem.cpp
-    src/systems/ScriptingSystem.cpp
-    src/systems/UISystem.cpp
-    src/systems/NetworkSystem.cpp
-    src/systems/ProfilerSystem.cpp
-    src/systems/UpdateSystem.cpp
-    src/graphics/OpenGLRenderer.cpp
-    src/graphics/D3D11Renderer.cpp
-    src/web/WebAssemblyBindings.cpp
-    src/typescript/NativeTypeScriptRuntime.cpp
-    src/typescript/TypeScriptToNativeCompiler.cpp
-)
-
-# Platform-specific sources
-if(PLATFORM_WINDOWS)
-    list(APPEND ENGINE_SOURCES
-        platforms/windows/WindowsPlatform.cpp
-        platforms/windows/graphics.cpp
-        platforms/windows/audio.cpp
-        platforms/windows/input.cpp
-        platforms/windows/network.cpp
-        platforms/windows/system.cpp
-    )
-elseif(PLATFORM_LINUX)
-    list(APPEND ENGINE_SOURCES
-        platforms/linux/LinuxPlatform.cpp
-    )
-elseif(PLATFORM_MACOS)
-    list(APPEND ENGINE_SOURCES
-        platforms/macos/macOSPlatform.swift
-    )
-endif()
-
-# Android sources
-if(ANDROID)
-    list(APPEND ENGINE_SOURCES
-        platforms/android/AndroidPlatform.cpp
-        platforms/android/graphics.cpp
-        platforms/android/input.cpp
-        platforms/android/network.cpp
-        platforms/android/system.cpp
-        platforms/android/audio/AAudioPlatform.cpp
-        platforms/android/core/PlatformServices.cpp
-    )
-endif()
-
-# Create engine library
-add_library(FoundryEngine ${ENGINE_SOURCES})
-
 # Include directories
-target_include_directories(FoundryEngine PUBLIC
+include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/platforms
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include
+    ${Vulkan_INCLUDE_DIRS}
 )
+
+# Core engine library
+set(FOUNDRY_CORE_SOURCES
+    # Core systems
+    src/GameEngine/core/Engine.cpp
+    src/GameEngine/core/System.cpp
+    src/GameEngine/core/EnhancedECS.cpp
+    src/GameEngine/core/AdvancedMemoryManager.cpp
+    
+    # Math library
+    src/GameEngine/math/Vector2.cpp
+    src/GameEngine/math/Vector3.cpp
+    src/GameEngine/math/Vector4.cpp
+    src/GameEngine/math/Matrix4.cpp
+    src/GameEngine/math/Quaternion.cpp
+    
+    # Graphics systems
+    src/GameEngine/graphics/AdvancedRenderPipeline.cpp
+    src/GameEngine/graphics/VulkanRenderer.cpp
+    src/GameEngine/graphics/RayTracingSystem.cpp
+    
+    # Physics systems
+    src/GameEngine/physics/AdvancedPhysicsSystem.cpp
+    src/GameEngine/physics/FluidSimulation.cpp
+    src/GameEngine/physics/ClothPhysics.cpp
+    
+    # Audio systems
+    src/GameEngine/audio/AdvancedAudioSystem.cpp
+    src/GameEngine/audio/SpatialAudio.cpp
+    src/GameEngine/audio/ProceduralAudio.cpp
+    
+    # AI systems
+    src/GameEngine/ai/AISystem.cpp
+    src/GameEngine/ai/NeuralNetwork.cpp
+    src/GameEngine/ai/BehaviorTree.cpp
+    
+    # Networking
+    src/GameEngine/networking/AdvancedNetworkSystem.cpp
+    src/GameEngine/networking/NetworkPrediction.cpp
+    src/GameEngine/networking/AntiCheat.cpp
+    
+    # VR/AR systems
+    src/GameEngine/vr/VRSystem.cpp
+    src/GameEngine/vr/SpatialMapping.cpp
+    src/GameEngine/vr/VRInteraction.cpp
+    
+    # Cloud integration
+    src/GameEngine/cloud/CloudSystem.cpp
+    src/GameEngine/cloud/AssetStreaming.cpp
+    src/GameEngine/cloud/MultiplayerBackend.cpp
+    
+    # Security
+    src/GameEngine/security/SecuritySystem.cpp
+    src/GameEngine/security/CodeObfuscator.cpp
+    src/GameEngine/security/AntiCheatEngine.cpp
+    src/GameEngine/security/DRMSystem.cpp
+    
+    # Mobile systems
+    src/GameEngine/mobile/MobileSystem.cpp
+    src/GameEngine/mobile/AdaptiveRenderer.cpp
+    src/GameEngine/mobile/MobileUI.cpp
+    
+    # Character systems
+    src/GameEngine/character/AdvancedCharacterSystem.cpp
+    src/GameEngine/character/ProceduralGeneration.cpp
+    src/GameEngine/character/AnimationSystem.cpp
+    
+    # TypeScript runtime
+    src/GameEngine/typescript/AdvancedTypeScriptRuntime.cpp
+    src/GameEngine/typescript/TypeScriptJITCompiler.cpp
+    src/GameEngine/typescript/TypeScriptModule.cpp
+    
+    # Platform abstraction
+    src/GameEngine/platform/PlatformInterface.cpp
+    src/GameEngine/platform/WindowSystem.cpp
+    src/GameEngine/platform/InputSystem.cpp
+)
+
+# Create core library
+add_library(FoundryEngine STATIC ${FOUNDRY_CORE_SOURCES})
 
 # Link libraries
-target_link_libraries(FoundryEngine PUBLIC
-    ${CMAKE_THREAD_LIBS_INIT}
+target_link_libraries(FoundryEngine
+    ${Vulkan_LIBRARIES}
     ${OPENGL_LIBRARIES}
+    Threads::Threads
 )
 
-# Platform-specific linking
-if(PLATFORM_WINDOWS)
-    target_link_libraries(FoundryEngine PUBLIC
-        d3d11.lib
-        dxgi.lib
-        d3dcompiler.lib
-        xaudio2.lib
-        xinput.lib
-        ws2_32.lib
-        winmm.lib
+# Platform-specific libraries
+if(WIN32)
+    target_link_libraries(FoundryEngine
+        d3d11 d3d12 dxgi
+        xaudio2 xinput
+        ws2_32 winmm
     )
-elseif(PLATFORM_LINUX)
-    target_link_libraries(FoundryEngine PUBLIC
-        ${SDL2_LIBRARIES}
-        ${OPENAL_LIBRARY}
-        GL
-        X11
-        pthread
-        dl
+elseif(APPLE)
+    find_library(COCOA_LIBRARY Cocoa)
+    find_library(METAL_LIBRARY Metal)
+    find_library(COREAUDIO_LIBRARY CoreAudio)
+    target_link_libraries(FoundryEngine
+        ${COCOA_LIBRARY}
+        ${METAL_LIBRARY}
+        ${COREAUDIO_LIBRARY}
     )
-elseif(PLATFORM_MACOS)
-    target_link_libraries(FoundryEngine PUBLIC
-        "-framework OpenGL"
-        "-framework Cocoa"
-        "-framework IOKit"
-        "-framework CoreVideo"
-        "-framework Metal"
-        "-framework MetalKit"
-        "-framework AVFoundation"
+elseif(UNIX)
+    find_package(X11 REQUIRED)
+    find_package(ALSA REQUIRED)
+    target_link_libraries(FoundryEngine
+        ${X11_LIBRARIES}
+        ${ALSA_LIBRARIES}
+        GL EGL
     )
 endif()
 
-# Optional dependencies
-if(ENABLE_PHYSICS)
-    target_link_libraries(FoundryEngine PUBLIC ${BULLET_LIBRARIES})
-    target_compile_definitions(FoundryEngine PUBLIC ENABLE_PHYSICS)
-endif()
+# TypeScript runtime library
+add_library(FoundryTypeScript SHARED
+    src/GameEngine/typescript/AdvancedTypeScriptRuntime.cpp
+    src/GameEngine/typescript/TypeScriptJITCompiler.cpp
+    src/GameEngine/typescript/TypeScriptModule.cpp
+    src/GameEngine/typescript/TypeScriptValue.cpp
+)
 
-if(ENABLE_SCRIPTING)
-    target_link_libraries(FoundryEngine PUBLIC ${LUA_LIBRARIES})
-    target_compile_definitions(FoundryEngine PUBLIC ENABLE_SCRIPTING)
-endif()
+target_link_libraries(FoundryTypeScript FoundryEngine)
 
-if(ENABLE_NETWORKING)
-    target_compile_definitions(FoundryEngine PUBLIC ENABLE_NETWORKING)
-endif()
-
-if(ENABLE_AUDIO)
-    target_compile_definitions(FoundryEngine PUBLIC ENABLE_AUDIO)
-endif()
-
-if(ENABLE_PROFILING)
-    target_compile_definitions(FoundryEngine PUBLIC ENABLE_PROFILING)
-endif()
-
-# Web/WASM build
-if(EMSCRIPTEN)
-    set_target_properties(FoundryEngine PROPERTIES
-        COMPILE_FLAGS "-s USE_SDL=2 -s USE_WEBGL2=1"
-        LINK_FLAGS "-s USE_SDL=2 -s USE_WEBGL2=1 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1"
-    )
-endif()
+# IDE integration library
+add_library(FoundryIDE SHARED
+    ide/src/commonMain/kotlin/com/foundry/ide/core/IDECore.kt
+    ide/src/commonMain/kotlin/com/foundry/ide/agentic/AgenticDevelopmentEnvironment.kt
+    ide/src/commonMain/kotlin/com/foundry/ide/mcp/MCPClient.kt
+)
 
 # Examples
-if(BUILD_EXAMPLES)
-    add_subdirectory(examples)
+if(FOUNDRY_BUILD_EXAMPLES)
+    # Basic TypeScript game
+    add_executable(TypeScriptGameExample
+        examples/typescript-game/src/main.cpp
+    )
+    target_link_libraries(TypeScriptGameExample FoundryEngine FoundryTypeScript)
+    
+    # Native TypeScript game
+    add_executable(NativeTypeScriptGameExample
+        examples/native-typescript-game/src/main.cpp
+    )
+    target_link_libraries(NativeTypeScriptGameExample FoundryEngine FoundryTypeScript)
+    
+    # Complete demo
+    add_executable(CompleteGameDemo
+        examples/complete-game-demo/src/main.cpp
+    )
+    target_link_libraries(CompleteGameDemo FoundryEngine FoundryTypeScript)
+    
+    # VR demo
+    if(FOUNDRY_ENABLE_VR)
+        add_executable(VRDemo
+            examples/vr-demo/src/main.cpp
+        )
+        target_link_libraries(VRDemo FoundryEngine FoundryTypeScript)
+    endif()
 endif()
 
 # Tests
-if(BUILD_TESTS)
+if(FOUNDRY_BUILD_TESTS)
     enable_testing()
-    add_subdirectory(tests)
+    
+    add_executable(FoundryEngineTests
+        tests/AdvancedEngineTests.cpp
+        tests/TypeScriptRuntimeTests.cpp
+        tests/PhysicsTests.cpp
+        tests/NetworkingTests.cpp
+        tests/AITests.cpp
+        tests/SecurityTests.cpp
+    )
+    
+    target_link_libraries(FoundryEngineTests FoundryEngine FoundryTypeScript)
+    
+    add_test(NAME EngineTests COMMAND FoundryEngineTests)
 endif()
 
 # Installation
-install(TARGETS FoundryEngine
+install(TARGETS FoundryEngine FoundryTypeScript
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
@@ -254,38 +249,33 @@ install(DIRECTORY include/
 )
 
 # Package configuration
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/FoundryEngineConfigVersion.cmake"
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY AnyNewerVersion
-)
-
-configure_package_config_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FoundryEngineConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/FoundryEngineConfig.cmake"
-    INSTALL_DESTINATION lib/cmake/FoundryEngine
-)
-
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/FoundryEngineConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/FoundryEngineConfigVersion.cmake"
-    DESTINATION lib/cmake/FoundryEngine
-)
-
-# CPack configuration
 set(CPACK_PACKAGE_NAME "FoundryEngine")
-set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "High-performance cross-platform game engine")
-set(CPACK_PACKAGE_VENDOR "FoundryEngine Team")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
-set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_DESCRIPTION "Advanced Game Engine with TypeScript-First Development")
+set(CPACK_PACKAGE_CONTACT "team@foundryengine.com")
 
 if(WIN32)
-    set(CPACK_GENERATOR "NSIS;ZIP")
+    set(CPACK_GENERATOR "NSIS")
 elseif(APPLE)
-    set(CPACK_GENERATOR "DragNDrop;TGZ")
+    set(CPACK_GENERATOR "DragNDrop")
 else()
-    set(CPACK_GENERATOR "DEB;RPM;TGZ")
+    set(CPACK_GENERATOR "DEB;RPM")
 endif()
+
 include(CPack)
+
+# Print configuration summary
+message(STATUS "=== Foundry Engine Configuration ===")
+message(STATUS "Version: ${PROJECT_VERSION}")
+message(STATUS "Platform: ${FOUNDRY_PLATFORM}")
+message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "SIMD Enabled: ${FOUNDRY_ENABLE_SIMD}")
+message(STATUS "Vulkan Enabled: ${FOUNDRY_ENABLE_VULKAN}")
+message(STATUS "Ray Tracing Enabled: ${FOUNDRY_ENABLE_RAYTRACING}")
+message(STATUS "VR Enabled: ${FOUNDRY_ENABLE_VR}")
+message(STATUS "Networking Enabled: ${FOUNDRY_ENABLE_NETWORKING}")
+message(STATUS "AI Enabled: ${FOUNDRY_ENABLE_AI}")
+message(STATUS "Build Tests: ${FOUNDRY_BUILD_TESTS}")
+message(STATUS "Build Examples: ${FOUNDRY_BUILD_EXAMPLES}")
+message(STATUS "=====================================")

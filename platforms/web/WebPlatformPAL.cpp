@@ -1228,43 +1228,143 @@ std::string WebStorageContext::getTempPath() const {
 }
 
 bool WebStorageContext::fileExists(const std::string& path) const {
-    // Check if file exists in Web storage
-    return false;
+    std::string jsCode = "try { return localStorage.getItem('foundry_file_" + path + "') !== null; } catch(e) { return false; }";
+    return emscripten_run_script_int(jsCode.c_str()) != 0;
 }
 
 size_t WebStorageContext::getFileSize(const std::string& path) const {
-    // Get file size from Web storage
-    return 0;
+    std::string jsCode = "try { var data = localStorage.getItem('foundry_file_" + path + "'); return data ? data.length : 0; } catch(e) { return 0; }";
+    return emscripten_run_script_int(jsCode.c_str());
 }
 
 bool WebStorageContext::readFile(const std::string& path, std::vector<uint8_t>& data) const {
-    // Read file from Web storage
-    return false;
+    std::string jsCode = "try { return localStorage.getItem('foundry_file_" + path + "') || ''; } catch(e) { return ''; }";
+    
+    char buffer[65536]; // 64KB buffer
+    emscripten_run_script_string(jsCode.c_str(), buffer, sizeof(buffer));
+    
+    std::string fileData(buffer);
+    if (fileData.empty()) {
+        return false;
+    }
+    
+    // Convert base64 string back to binary data
+    data.clear();
+    data.reserve(fileData.length() * 3 / 4);
+    
+    // Simple base64 decode (for demo - in production use proper base64 library)
+    const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    for (size_t i = 0; i < fileData.length(); i += 4) {
+        uint32_t val = 0;
+        for (int j = 0; j < 4 && i + j < fileData.length(); ++j) {
+            size_t pos = chars.find(fileData[i + j]);
+            if (pos != std::string::npos) {
+                val = (val << 6) | pos;
+            }
+        }
+        
+        data.push_back((val >> 16) & 0xFF);
+        if (i + 2 < fileData.length()) data.push_back((val >> 8) & 0xFF);
+        if (i + 3 < fileData.length()) data.push_back(val & 0xFF);
+    }
+    
+    return true;
 }
 
 bool WebStorageContext::writeFile(const std::string& path, const std::vector<uint8_t>& data) {
-    // Write file to Web storage
-    return false;
+    // Convert binary data to base64 string
+    const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string encoded;
+    
+    for (size_t i = 0; i < data.size(); i += 3) {
+        uint32_t val = (data[i] << 16);
+        if (i + 1 < data.size()) val |= (data[i + 1] << 8);
+        if (i + 2 < data.size()) val |= data[i + 2];
+        
+        encoded += chars[(val >> 18) & 0x3F];
+        encoded += chars[(val >> 12) & 0x3F];
+        encoded += (i + 1 < data.size()) ? chars[(val >> 6) & 0x3F] : '=';
+        encoded += (i + 2 < data.size()) ? chars[val & 0x3F] : '=';
+    }
+    
+    std::string jsCode = "try { localStorage.setItem('foundry_file_" + path + "', '" + encoded + "'); return true; } catch(e) { return false; }";
+    return emscripten_run_script_int(jsCode.c_str()) != 0;
 }
 
 bool WebStorageContext::deleteFile(const std::string& path) {
-    // Delete file from Web storage
-    return false;
+    std::string jsCode = "try { localStorage.removeItem('foundry_file_" + path + "'); return true; } catch(e) { return false; }";
+    return emscripten_run_script_int(jsCode.c_str()) != 0;
 }
 
 bool WebStorageContext::createDirectory(const std::string& path) {
-    // Create directory in Web storage
-    return false;
+    // Web storage doesn't have directories, but we can simulate by storing a marker
+    std::string jsCode = "try { localStorage.setItem('foundry_dir_" + path + "', 'directory'); return true; } catch(e) { return false; }";
+    return emscripten_run_script_int(jsCode.c_str()) != 0;
 }
 
 bool WebStorageContext::deleteDirectory(const std::string& path) {
-    // Delete directory from Web storage
-    return false;
+    // Remove directory marker and all files in the directory
+    std::string jsCode = R"(
+        try {
+            localStorage.removeItem('foundry_dir_)" + path + R"(');
+            var keysToRemove = [];
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (key && key.startsWith('foundry_file_)" + path + R"(/')) {
+                    keysToRemove.push(key);
+                }
+            }
+            for (var j = 0; j < keysToRemove.length; j++) {
+                localStorage.removeItem(keysToRemove[j]);
+            }
+            return true;
+        } catch(e) { 
+            return false; 
+        }
+    )";
+    return emscripten_run_script_int(jsCode.c_str()) != 0;
 }
 
 std::vector<std::string> WebStorageContext::listDirectory(const std::string& path) const {
-    // List directory contents in Web storage
-    return {};
+    std::vector<std::string> files;
+    
+    // Use JavaScript to enumerate localStorage keys
+    std::string jsCode = R"(
+        try {
+            var files = [];
+            var prefix = 'foundry_file_)" + path + R"(/';
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (key && key.startsWith(prefix)) {
+                    var filename = key.substring(prefix.length);
+                    var slashIndex = filename.indexOf('/');
+                    if (slashIndex === -1) {
+                        files.push(filename);
+                    }
+                }
+            }
+            return files.join('|');
+        } catch(e) { 
+            return ''; 
+        }
+    )";
+    
+    char buffer[4096];
+    emscripten_run_script_string(jsCode.c_str(), buffer, sizeof(buffer));
+    
+    std::string result(buffer);
+    if (!result.empty()) {
+        size_t pos = 0;
+        while ((pos = result.find('|')) != std::string::npos) {
+            files.push_back(result.substr(0, pos));
+            result.erase(0, pos + 1);
+        }
+        if (!result.empty()) {
+            files.push_back(result);
+        }
+    }
+    
+    return files;
 }
 
 bool WebStorageContext::isWritable(const std::string& path) const {
@@ -1300,20 +1400,76 @@ void WebStorageContext::syncStorage() {
 }
 
 bool WebStorageContext::initializeWebStorage() {
-    // Initialize Web storage
-    return true;
+    // Check if localStorage is available
+    bool available = emscripten_run_script_int("typeof(Storage) !== 'undefined' && typeof(localStorage) !== 'undefined'") != 0;
+    
+    if (available) {
+        // Initialize IndexedDB for larger storage
+        emscripten_run_script(R"(
+            if (typeof(indexedDB) !== 'undefined') {
+                var request = indexedDB.open('FoundryEngineDB', 1);
+                request.onupgradeneeded = function(event) {
+                    var db = event.target.result;
+                    if (!db.objectStoreNames.contains('files')) {
+                        db.createObjectStore('files', { keyPath: 'path' });
+                    }
+                };
+            }
+        )");
+    }
+    
+    return available;
 }
 
 void WebStorageContext::shutdownWebStorage() {
-    // Shutdown Web storage
+    // Close IndexedDB connections
+    emscripten_run_script(R"(
+        if (typeof(indexedDB) !== 'undefined') {
+            // Close any open IndexedDB connections
+            if (window.foundryDB) {
+                window.foundryDB.close();
+                window.foundryDB = null;
+            }
+        }
+    )");
 }
 
 std::string WebStorageContext::resolveStoragePath(const std::string& path) const {
-    return path;
+    // Clean and normalize the path
+    std::string resolved = path;
+    
+    // Remove leading slashes
+    while (!resolved.empty() && resolved[0] == '/') {
+        resolved = resolved.substr(1);
+    }
+    
+    // Replace backslashes with forward slashes
+    for (char& c : resolved) {
+        if (c == '\\') c = '/';
+    }
+    
+    return resolved;
 }
 
 bool WebStorageContext::checkStorageQuota(int64_t requiredBytes) const {
-    return true;
+    // Check available storage quota
+    std::string jsCode = R"(
+        try {
+            if (navigator.storage && navigator.storage.estimate) {
+                navigator.storage.estimate().then(function(estimate) {
+                    window.foundryStorageQuota = estimate.quota;
+                    window.foundryStorageUsage = estimate.usage;
+                });
+                return window.foundryStorageQuota ? 
+                    (window.foundryStorageQuota - window.foundryStorageUsage) > )" + std::to_string(requiredBytes) + R"( : true;
+            }
+            return true;
+        } catch(e) {
+            return true;
+        }
+    )";
+    
+    return emscripten_run_script_int(jsCode.c_str()) != 0;
 }
 
 // ========== WEB PLATFORM SERVICES ==========
@@ -1393,18 +1549,103 @@ bool WebPlatformServices::isCloudSaveSupported() const {
 }
 
 bool WebPlatformServices::saveToCloud(const std::string& key, const std::vector<uint8_t>& data) {
-    // Save to IndexedDB
-    return true;
+    // Convert data to base64 for storage
+    const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string encoded;
+    
+    for (size_t i = 0; i < data.size(); i += 3) {
+        uint32_t val = (data[i] << 16);
+        if (i + 1 < data.size()) val |= (data[i + 1] << 8);
+        if (i + 2 < data.size()) val |= data[i + 2];
+        
+        encoded += chars[(val >> 18) & 0x3F];
+        encoded += chars[(val >> 12) & 0x3F];
+        encoded += (i + 1 < data.size()) ? chars[(val >> 6) & 0x3F] : '=';
+        encoded += (i + 2 < data.size()) ? chars[val & 0x3F] : '=';
+    }
+    
+    std::string jsCode = R"(
+        try {
+            if (typeof(indexedDB) !== 'undefined') {
+                var request = indexedDB.open('FoundryEngineDB', 1);
+                request.onsuccess = function(event) {
+                    var db = event.target.result;
+                    var transaction = db.transaction(['files'], 'readwrite');
+                    var store = transaction.objectStore('files');
+                    store.put({ path: ')" + key + R"(', data: ')" + encoded + R"(' });
+                };
+                return true;
+            } else {
+                localStorage.setItem('foundry_cloud_)" + key + R"(', ')" + encoded + R"(');
+                return true;
+            }
+        } catch(e) {
+            return false;
+        }
+    )";
+    
+    return emscripten_run_script_int(jsCode.c_str()) != 0;
 }
 
 bool WebPlatformServices::loadFromCloud(const std::string& key, std::vector<uint8_t>& data) {
-    // Load from IndexedDB
-    return false;
+    std::string jsCode = R"(
+        try {
+            var result = localStorage.getItem('foundry_cloud_)" + key + R"(');
+            return result || '';
+        } catch(e) {
+            return '';
+        }
+    )";
+    
+    char buffer[65536];
+    emscripten_run_script_string(jsCode.c_str(), buffer, sizeof(buffer));
+    
+    std::string encoded(buffer);
+    if (encoded.empty()) {
+        return false;
+    }
+    
+    // Decode base64 data
+    data.clear();
+    const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    
+    for (size_t i = 0; i < encoded.length(); i += 4) {
+        uint32_t val = 0;
+        for (int j = 0; j < 4 && i + j < encoded.length(); ++j) {
+            size_t pos = chars.find(encoded[i + j]);
+            if (pos != std::string::npos) {
+                val = (val << 6) | pos;
+            }
+        }
+        
+        data.push_back((val >> 16) & 0xFF);
+        if (i + 2 < encoded.length()) data.push_back((val >> 8) & 0xFF);
+        if (i + 3 < encoded.length()) data.push_back(val & 0xFF);
+    }
+    
+    return true;
 }
 
 bool WebPlatformServices::deleteFromCloud(const std::string& key) {
-    // Delete from IndexedDB
-    return false;
+    std::string jsCode = R"(
+        try {
+            if (typeof(indexedDB) !== 'undefined') {
+                var request = indexedDB.open('FoundryEngineDB', 1);
+                request.onsuccess = function(event) {
+                    var db = event.target.result;
+                    var transaction = db.transaction(['files'], 'readwrite');
+                    var store = transaction.objectStore('files');
+                    store.delete(')" + key + R"(');
+                };
+            }
+            localStorage.removeItem('foundry_cloud_)" + key + R"(');
+            return true;
+        } catch(e) {
+            return false;
+        }
+    )";
+    
+    return emscripten_run_script_int(jsCode.c_str()) != 0;
 }
 
 bool WebPlatformServices::isPushNotificationsSupported() const {
@@ -1426,21 +1667,107 @@ void WebPlatformServices::scheduleNotification(const std::string& title, const s
 }
 
 bool WebPlatformServices::initializeIndexedDB() {
-    // Initialize IndexedDB
-    return true;
+    std::string jsCode = R"(
+        try {
+            if (typeof(indexedDB) === 'undefined') {
+                return false;
+            }
+            
+            var request = indexedDB.open('FoundryEngineDB', 1);
+            
+            request.onupgradeneeded = function(event) {
+                var db = event.target.result;
+                
+                // Create object stores
+                if (!db.objectStoreNames.contains('files')) {
+                    db.createObjectStore('files', { keyPath: 'path' });
+                }
+                
+                if (!db.objectStoreNames.contains('settings')) {
+                    db.createObjectStore('settings', { keyPath: 'key' });
+                }
+                
+                if (!db.objectStoreNames.contains('cache')) {
+                    var cacheStore = db.createObjectStore('cache', { keyPath: 'url' });
+                    cacheStore.createIndex('timestamp', 'timestamp', { unique: false });
+                }
+            };
+            
+            request.onsuccess = function(event) {
+                window.foundryDB = event.target.result;
+                console.log('IndexedDB initialized successfully');
+            };
+            
+            request.onerror = function(event) {
+                console.error('IndexedDB initialization failed:', event.target.error);
+            };
+            
+            return true;
+        } catch(e) {
+            console.error('IndexedDB not supported:', e);
+            return false;
+        }
+    )";
+    
+    return emscripten_run_script_int(jsCode.c_str()) != 0;
 }
 
 void WebPlatformServices::shutdownIndexedDB() {
-    // Shutdown IndexedDB
+    emscripten_run_script(R"(
+        try {
+            if (window.foundryDB) {
+                window.foundryDB.close();
+                window.foundryDB = null;
+                console.log('IndexedDB closed');
+            }
+        } catch(e) {
+            console.error('Error closing IndexedDB:', e);
+        }
+    )");
 }
 
 bool WebPlatformServices::initializeServiceWorker() {
-    // Initialize Service Worker
-    return true;
+    std::string jsCode = R"(
+        try {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/foundry-sw.js')
+                    .then(function(registration) {
+                        console.log('Service Worker registered:', registration.scope);
+                        window.foundryServiceWorker = registration;
+                    })
+                    .catch(function(error) {
+                        console.log('Service Worker registration failed:', error);
+                    });
+                return true;
+            } else {
+                console.log('Service Workers not supported');
+                return false;
+            }
+        } catch(e) {
+            console.error('Service Worker initialization error:', e);
+            return false;
+        }
+    )";
+    
+    return emscripten_run_script_int(jsCode.c_str()) != 0;
 }
 
 void WebPlatformServices::shutdownServiceWorker() {
-    // Shutdown Service Worker
+    emscripten_run_script(R"(
+        try {
+            if (window.foundryServiceWorker) {
+                window.foundryServiceWorker.unregister()
+                    .then(function(success) {
+                        if (success) {
+                            console.log('Service Worker unregistered');
+                        }
+                        window.foundryServiceWorker = null;
+                    });
+            }
+        } catch(e) {
+            console.error('Error unregistering Service Worker:', e);
+        }
+    )");
 }
 
 // ========== WEB WINDOW MANAGER ==========
