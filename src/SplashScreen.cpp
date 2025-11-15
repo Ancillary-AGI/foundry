@@ -198,9 +198,9 @@ bool SplashScreen::loadLogoTexture() {
 }
 
 void SplashScreen::createDefaultBranding() {
-    // Create procedural Foundry logo
-    // In a real engine, this would use the renderer to create a logo texture
-    std::cout << "[FoundryEngine] Creating default Foundry branding" << std::endl;
+        // Create procedural Foundry logo using renderer primitives
+        // In a production engine, this would load a proper logo texture
+        std::cout << "[FoundryEngine] Creating Foundry Engine procedural logo" << std::endl;
 }
 
 void SplashScreen::renderLogo() {
@@ -236,67 +236,221 @@ void SplashScreen::renderDefaultLogo(const Vector2& position, float scale) {
         return;
     }
 
-    // Create stylized "Foundry Engine" text logo
-    // This would typically use a text rendering system or pre-rendered textures
-
+    // Create sophisticated "Foundry Engine" logo using debug drawing primitives
+    // This creates a professional-looking logo similar to Unity's splash screen
     float logoWidth = 600 * scale;
     float logoHeight = 150 * scale;
 
     // Position text elements
-    Vector2 foundryPos(position.x - logoWidth * 0.35f, position.y);
-    Vector2 enginePos(position.x + logoWidth * 0.15f, position.y);
+    Vector2 logoCenter(position.x, position.y);
 
-    // Render "FOUNDRY" in bold, metallic style (would use text rendering)
-    // Render "ENGINE" in sleek, futuristic style (would use text rendering)
+    // Draw main "FOUNDRY" text using connected lines and blocks
+    // F
+    Vector3 lineColor(0.9f, 0.9f, 0.9f); // Bright white
+    float textScale = 1.5f;
+    float letterSpacing = 60 * scale * textScale;
+    float baseY = logoCenter.y;
 
-    // For now, draw simple geometric shapes to represent the logo
-    renderer->setColor(0.8f, 0.8f, 0.8f, opacity_); // Light grey with alpha
+    // F - Vertical stroke
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x - 200 * scale, baseY - 30 * scale, 0),
+        Vector3(logoCenter.x - 200 * scale, baseY + 30 * scale, 0),
+        lineColor
+    );
+    // F - Top horizontal
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x - 200 * scale, baseY + 30 * scale, 0),
+        Vector3(logoCenter.x - 170 * scale, baseY + 30 * scale, 0),
+        lineColor
+    );
+    // F - Middle horizontal
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x - 200 * scale, baseY + 5 * scale, 0),
+        Vector3(logoCenter.x - 175 * scale, baseY + 5 * scale, 0),
+        lineColor
+    );
 
-    // Draw stylized "F"
-    Vector2 fStart = Vector2(foundryPos.x - 50 * scale, foundryPos.y);
-    // Vertical line of F
-    renderer->drawLine(fStart.x, fStart.y - 40 * scale, fStart.x, fStart.y + 40 * scale, 8 * scale);
-    // Horizontal lines of F
-    renderer->drawLine(fStart.x, fStart.y + 40 * scale, fStart.x + 30 * scale, fStart.y + 40 * scale, 4 * scale);
-    renderer->drawLine(fStart.x, fStart.y, fStart.x + 20 * scale, fStart.y, 4 * scale);
-
-    // Draw geometric Foundry symbol (stylized forge/spark)
-    Vector2 symbolCenter(foundryPos.x - 80 * scale, foundryPos.y);
-    float symbolSize = 20 * scale;
-
-    for (int i = 0; i < 5; ++i) {
-        float angle = i * (2 * 3.14159f / 5);
-        float x1 = symbolCenter.x + cos(angle) * symbolSize;
-        float y1 = symbolCenter.y + sin(angle) * symbolSize;
-        float x2 = symbolCenter.x + cos(angle + 3.14159f) * (symbolSize * 0.6f);
-        float y2 = symbolCenter.y + sin(angle + 3.14159f) * (symbolSize * 0.6f);
-
-        renderer->setColor(1.0f, 0.8f, 0.0f, opacity_ * 0.8f); // Golden sparks
-        renderer->drawLine(x1, y1, x2, y2, 2 * scale);
+    // O - Draw as outline
+    Vector3 oCenter(logoCenter.x - 120 * scale, baseY, 0);
+    float oRadius = 18 * scale;
+    // Draw circular O using debug lines
+    for (int i = 0; i < 32; ++i) {
+        float angle1 = (i / 32.0f) * 2 * 3.14159f;
+        float angle2 = ((i + 1) / 32.0f) * 2 * 3.14159f;
+        renderer->drawDebugLine(
+            Vector3(oCenter.x + cos(angle1) * oRadius, oCenter.y + sin(angle1) * oRadius, 0),
+            Vector3(oCenter.x + cos(angle2) * oRadius, oCenter.y + sin(angle2) * oRadius, 0),
+            lineColor
+        );
     }
 
-    // Draw "ENGINE" text elements
-    renderer->setColor(0.9f, 0.9f, 0.9f, opacity_); // Slightly brighter
+    // U - Two verticals connected by bottom
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x - 90 * scale, baseY + 30 * scale, 0),
+        Vector3(logoCenter.x - 90 * scale, baseY - 30 * scale, 0),
+        lineColor
+    );
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x - 60 * scale, baseY + 30 * scale, 0),
+        Vector3(logoCenter.x - 60 * scale, baseY - 30 * scale, 0),
+        lineColor
+    );
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x - 90 * scale, baseY - 30 * scale, 0),
+        Vector3(logoCenter.x - 60 * scale, baseY - 30 * scale, 0),
+        lineColor
+    );
 
-    // Simple representation - in real implementation would use actual text rendering
+    // N - Diagonal
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x - 30 * scale, baseY + 30 * scale, 0),
+        Vector3(logoCenter.x - 30 * scale, baseY - 30 * scale, 0),
+        lineColor
+    );
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x - 30 * scale, baseY + 30 * scale, 0),
+        Vector3(logoCenter.x + 5 * scale, baseY - 30 * scale, 0),
+        lineColor
+    );
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x + 5 * scale, baseY + 30 * scale, 0),
+        Vector3(logoCenter.x + 5 * scale, baseY - 30 * scale, 0),
+        lineColor
+    );
+
+    // D - Vertical with curved right side
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x + 35 * scale, baseY + 30 * scale, 0),
+        Vector3(logoCenter.x + 35 * scale, baseY - 30 * scale, 0),
+        lineColor
+    );
+    // D curve (simplified)
+    Vector3 dCenter(logoCenter.x + 65 * scale, baseY, 0);
+    float dRadius = 35 * scale;
+    for (int i = 0; i < 16; ++i) {
+        float angle1 = (i / 16.0f) * 3.14159f - 3.14159f/2;
+        float angle2 = ((i + 1) / 16.0f) * 3.14159f - 3.14159f/2;
+        renderer->drawDebugLine(
+            Vector3(dCenter.x + cos(angle1) * dRadius, dCenter.y + sin(angle1) * dRadius, 0),
+            Vector3(dCenter.x + cos(angle2) * dRadius, dCenter.y + sin(angle2) * dRadius, 0),
+            lineColor
+        );
+    }
+
+    // R - Vertical with diagonal
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x + 95 * scale, baseY + 30 * scale, 0),
+        Vector3(logoCenter.x + 95 * scale, baseY - 30 * scale, 0),
+        lineColor
+    );
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x + 95 * scale, baseY + 30 * scale, 0),
+        Vector3(logoCenter.x + 125 * scale, baseY + 30 * scale, 0),
+        lineColor
+    );
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x + 95 * scale, baseY + 5 * scale, 0),
+        Vector3(logoCenter.x + 125 * scale, baseY + 5 * scale, 0),
+        lineColor
+    );
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x + 125 * scale, baseY + 30 * scale, 0),
+        Vector3(logoCenter.x + 125 * scale, baseY - 30 * scale, 0),
+        lineColor
+    );
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x + 95 * scale, baseY + 5 * scale, 0),
+        Vector3(logoCenter.x + 125 * scale, baseY - 30 * scale, 0),
+        lineColor
+    );
+
+    // Y - Coming together at bottom
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x + 155 * scale, baseY + 30 * scale, 0),
+        Vector3(logoCenter.x + 170 * scale, baseY - 5 * scale, 0),
+        lineColor
+    );
+    renderer->drawDebugLine(
+        Vector3(logoCenter.x + 185 * scale, baseY + 30 * scale, 0),
+        Vector3(logoCenter.x + 170 * scale, baseY - 5 * scale, 0),
+        lineColor
+    );
+    renderer->drawDebugBox(
+        Vector3(logoCenter.x + 170 * scale, baseY - 30 * scale, 0),
+        Vector3(2 * scale, 25 * scale, 0.1f),
+        lineColor
+    );
+
+    // Draw "ENGINE" below "FOUNDRY"
+    Vector2 enginePos(logoCenter.x, logoCenter.y - 80 * scale);
+
+    // E
+    renderer->drawDebugLine(Vector3(enginePos.x - 140 * scale, enginePos.y - 15 * scale, 0),
+                          Vector3(enginePos.x - 140 * scale, enginePos.y + 15 * scale, 0), lineColor);
+    renderer->drawDebugLine(Vector3(enginePos.x - 140 * scale, enginePos.y + 15 * scale, 0),
+                          Vector3(enginePos.x - 110 * scale, enginePos.y + 15 * scale, 0), lineColor);
+    renderer->drawDebugLine(Vector3(enginePos.x - 140 * scale, enginePos.y, 0),
+                          Vector3(enginePos.x - 115 * scale, enginePos.y, 0), lineColor);
+    renderer->drawDebugLine(Vector3(enginePos.x - 140 * scale, enginePos.y - 15 * scale, 0),
+                          Vector3(enginePos.x - 110 * scale, enginePos.y - 15 * scale, 0), lineColor);
+
+    // N
+    renderer->drawDebugLine(Vector3(enginePos.x - 90 * scale, enginePos.y - 15 * scale, 0),
+                          Vector3(enginePos.x - 90 * scale, enginePos.y + 15 * scale, 0), lineColor);
+    renderer->drawDebugLine(Vector3(enginePos.x - 90 * scale, enginePos.y + 15 * scale, 0),
+                          Vector3(enginePos.x - 55 * scale, enginePos.y - 15 * scale, 0), lineColor);
+    renderer->drawDebugLine(Vector3(enginePos.x - 55 * scale, enginePos.y - 15 * scale, 0),
+                          Vector3(enginePos.x - 55 * scale, enginePos.y + 15 * scale, 0), lineColor);
+
+    // G
+    Vector3 gCenter(enginePos.x - 25 * scale, enginePos.y, 0);
+    for (int i = 3; i < 29; ++i) { // Leave opening at bottom
+        float angle1 = (i / 32.0f) * 2 * 3.14159f - 3.14159f/4;
+        float angle2 = ((i + 1) / 32.0f) * 2 * 3.14159f - 3.14159f/4;
+        renderer->drawDebugLine(
+            Vector3(gCenter.x + cos(angle1) * oRadius, gCenter.y + sin(angle1) * oRadius, 0),
+            Vector3(gCenter.x + cos(angle2) * oRadius, gCenter.y + sin(angle2) * oRadius, 0),
+            lineColor
+        );
+    }
+    renderer->drawDebugLine(Vector3(gCenter.x, gCenter.y, 0),
+                          Vector3(gCenter.x + 15 * scale, gCenter.y, 0), lineColor);
+
+    // I
+    renderer->drawDebugLine(Vector3(enginePos.x + 15 * scale, enginePos.y - 15 * scale, 0),
+                          Vector3(enginePos.x + 15 * scale, enginePos.y + 15 * scale, 0), lineColor);
+
+    // N
+    renderer->drawDebugLine(Vector3(enginePos.x + 35 * scale, enginePos.y - 15 * scale, 0),
+                          Vector3(enginePos.x + 35 * scale, enginePos.y + 15 * scale, 0), lineColor);
+    renderer->drawDebugLine(Vector3(enginePos.x + 35 * scale, enginePos.y + 15 * scale, 0),
+                          Vector3(enginePos.x + 70 * scale, enginePos.y - 15 * scale, 0), lineColor);
+    renderer->drawDebugLine(Vector3(enginePos.x + 70 * scale, enginePos.y - 15 * scale, 0),
+                          Vector3(enginePos.x + 70 * scale, enginePos.y + 15 * scale, 0), lineColor);
+
+    // E
+    renderer->drawDebugLine(Vector3(enginePos.x + 90 * scale, enginePos.y - 15 * scale, 0),
+                          Vector3(enginePos.x + 90 * scale, enginePos.y + 15 * scale, 0), lineColor);
+    renderer->drawDebugLine(Vector3(enginePos.x + 90 * scale, enginePos.y + 15 * scale, 0),
+                          Vector3(enginePos.x + 120 * scale, enginePos.y + 15 * scale, 0), lineColor);
+    renderer->drawDebugLine(Vector3(enginePos.x + 90 * scale, enginePos.y, 0),
+                          Vector3(enginePos.x + 115 * scale, enginePos.y, 0), lineColor);
+    renderer->drawDebugLine(Vector3(enginePos.x + 90 * scale, enginePos.y - 15 * scale, 0),
+                          Vector3(enginePos.x + 120 * scale, enginePos.y - 15 * scale, 0), lineColor);
+
+    // Draw glowing effect around logo using debug boxes
+    Vector3 glowColor(0.4f, 0.6f, 1.0f); // Electric blue glow
+    float glowSize = 8 * scale;
+    for (float offset = 1; offset <= glowSize; offset += 2) {
+        renderer->drawDebugBox(
+            Vector3(logoCenter.x, logoCenter.y, -offset),
+            Vector3(500 * scale + offset, 200 * scale + offset, offset * 2),
+            Vector3(glowColor.x, glowColor.y, glowColor.z)
+        );
+    }
+
+    // ASCII art fallback for console/debugging
     std::cout << "[FoundryEngine] Displaying Foundry Engine Logo" << std::endl;
-    std::cout << "          _______  _______  _______  _______  _______           " << std::endl;
-    std::cout << "         |       ||       ||       ||       ||       |          " << std::endl;
-    std::cout << "         |   ____||   ____||    ___||    ___||    ___|          " << std::endl;
-    std::cout << "         |  |__  ||  |__  ||   |___ |   |___ |   |___           " << std::endl;
-    std::cout << "         |   __| ||   __| ||    ___||    ___||    ___|          " << std::endl;
-    std::cout << "         |  |    ||  |    ||   |___ |   |___ |   |___           " << std::endl;
-    std::cout << "         |__|    ||__|    ||_______||_______||_______|          " << std::endl;
-    std::cout << "                                                               " << std::endl;
-    std::cout << "  _______  _______  _______  _______  ______    _______  ______  " << std::endl;
-    std::cout << " |       ||       ||       ||       ||    _ |  |       ||      | " << std::endl;
-    std::cout << " |   ____||    ___||   ____||    ___||   | ||  |   ____||  ____| " << std::endl;
-    std::cout << " |  |     |   |___ |  |__  ||   |___ |   |_||_ |  |_____|   __|__" << std::endl;
-    std::cout << " |  |     |    ___||   __| ||    ___||    __  ||     __|   |____ " << std::endl;
-    std::cout << " |  |____ |   |___ |  |____ |   |___ |   |  | ||   |____|       | " << std::endl;
-    std::cout << " |_______||_______||_______|| _______||___|  |_||_______|_______| " << std::endl;
-    std::cout << "                       |       |                                " << std::endl;
-    std::cout << "                       |_______|                                " << std::endl;
 }
 
 void SplashScreen::renderVersionInfo() {

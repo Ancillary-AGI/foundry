@@ -247,6 +247,97 @@ JNIEXPORT void JNICALL Java_com_foundry_ide_JvmEngineIntegration_nativeDispose(
     }
 }
 
+// ==========================================
+// AI MULTI-AGENT ORCHESTRATION INTEGRATION
+// ==========================================
+
+JNIEXPORT jstring JNICALL Java_com_foundry_ide_JvmEngineIntegration_nativeExecuteAIAgent(
+    JNIEnv* env, jobject obj, jstring agentId, jstring task, jstring contextJson) {
+
+    try {
+        std::string agentIdStr = jstringToStdString(env, agentId);
+        std::string taskStr = jstringToStdString(env, task);
+        std::string contextJsonStr = jstringToStdString(env, contextJson);
+
+        std::string result = FoundryEngineJNI::getInstance()->executeAIAgent(agentIdStr, taskStr, contextJsonStr);
+        return stdStringToJstring(env, result);
+    } catch (const std::exception& e) {
+        std::cerr << "JNI Error in nativeExecuteAIAgent: " << e.what() << std::endl;
+        return stdStringToJstring(env, "{\"success\":false,\"error\":\"JNI Exception\"}");
+    }
+}
+
+JNIEXPORT jstring JNICALL Java_com_foundry_ide_JvmEngineIntegration_nativeExecuteCollaborativeTask(
+    JNIEnv* env, jobject obj, jstring task, jstring agentIdsJson, jstring contextJson) {
+
+    try {
+        std::string taskStr = jstringToStdString(env, task);
+        std::string agentIdsJsonStr = jstringToStdString(env, agentIdsJson);
+        std::string contextJsonStr = jstringToStdString(env, contextJson);
+
+        std::string result = FoundryEngineJNI::getInstance()->executeCollaborativeTask(taskStr, agentIdsJsonStr, contextJsonStr);
+        return stdStringToJstring(env, result);
+    } catch (const std::exception& e) {
+        std::cerr << "JNI Error in nativeExecuteCollaborativeTask: " << e.what() << std::endl;
+        return stdStringToJstring(env, "{\"success\":false,\"error\":\"JNI Exception\"}");
+    }
+}
+
+JNIEXPORT jstring JNICALL Java_com_foundry_ide_JvmEngineIntegration_nativeGetAIAgentStatus(
+    JNIEnv* env, jobject obj, jstring agentId) {
+
+    try {
+        std::string agentIdStr = jstringToStdString(env, agentId);
+        std::string result = FoundryEngineJNI::getInstance()->getAIAgentStatus(agentIdStr);
+        return stdStringToJstring(env, result);
+    } catch (const std::exception& e) {
+        std::cerr << "JNI Error in nativeGetAIAgentStatus: " << e.what() << std::endl;
+        return stdStringToJstring(env, "{\"status\":\"unknown\",\"error\":\"JNI Exception\"}");
+    }
+}
+
+JNIEXPORT jstring JNICALL Java_com_foundry_ide_JvmEngineIntegration_nativeGetAvailableAIAgents(
+    JNIEnv* env, jobject obj) {
+
+    try {
+        std::string result = FoundryEngineJNI::getInstance()->getAvailableAIAgents();
+        return stdStringToJstring(env, result);
+    } catch (const std::exception& e) {
+        std::cerr << "JNI Error in nativeGetAvailableAIAgents: " << e.what() << std::endl;
+        return stdStringToJstring(env, "[]");
+    }
+}
+
+JNIEXPORT jstring JNICALL Java_com_foundry_ide_JvmEngineIntegration_nativeRegisterAIAgent(
+    JNIEnv* env, jobject obj, jstring agentConfigJson) {
+
+    try {
+        std::string agentConfigJsonStr = jstringToStdString(env, agentConfigJson);
+        std::string result = FoundryEngineJNI::getInstance()->registerAIAgent(agentConfigJsonStr);
+        return stdStringToJstring(env, result);
+    } catch (const std::exception& e) {
+        std::cerr << "JNI Error in nativeRegisterAIAgent: " << e.what() << std::endl;
+        return stdStringToJstring(env, "{\"success\":false,\"error\":\"JNI Exception\"}");
+    }
+}
+
+JNIEXPORT jboolean JNICALL Java_com_foundry_ide_JvmEngineIntegration_nativeSendAIAgentMessage(
+    JNIEnv* env, jobject obj, jstring fromAgentId, jstring toAgentId, jstring message, jstring messageType) {
+
+    try {
+        std::string fromAgentIdStr = jstringToStdString(env, fromAgentId);
+        std::string toAgentIdStr = jstringToStdString(env, toAgentId);
+        std::string messageStr = jstringToStdString(env, message);
+        std::string messageTypeStr = jstringToStdString(env, messageType);
+
+        bool result = FoundryEngineJNI::getInstance()->sendAIAgentMessage(fromAgentIdStr, toAgentIdStr, messageStr, messageTypeStr);
+        return result ? JNI_TRUE : JNI_FALSE;
+    } catch (const std::exception& e) {
+        std::cerr << "JNI Error in nativeSendAIAgentMessage: " << e.what() << std::endl;
+        return JNI_FALSE;
+    }
+}
+
 // Utility Functions Implementation
 std::string jstringToStdString(JNIEnv* env, jstring jstr) {
     if (!jstr) return "";
@@ -472,10 +563,89 @@ std::string FoundryEngineJNI::getAvailableSystems() {
     }
 }
 
+std::string FoundryEngineJNI::executeAIAgent(const std::string& agentId, const std::string& task, const std::string& contextJson) {
+    try {
+        std::cout << "[JNI] Executing AI agent " << agentId << " with task: " << task << std::endl;
+
+        // In a real implementation, this would call the C++ AI system
+        // For now, return a mock response resembling what the Kotlin layer expects
+        return "{\"success\":true,\"result\":\"Task executed by C++ AI agent\",\"confidence\":0.85,\"executionTime\":150}";
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to execute AI agent: " << e.what() << std::endl;
+        return "{\"success\":false,\"error\":\"Failed to execute AI agent\"}";
+    }
+}
+
+std::string FoundryEngineJNI::executeCollaborativeTask(const std::string& task, const std::string& agentIdsJson, const std::string& contextJson) {
+    try {
+        std::cout << "[JNI] Executing collaborative task: " << task << std::endl;
+        std::cout << "[JNI] Participating agents: " << agentIdsJson << std::endl;
+
+        // Parse agent IDs from JSON (simplified)
+        // In real implementation, parse JSON and coordinate multiple agents
+
+        return "{\"success\":true,\"result\":\"Collaborative task completed\",\"participatingAgents\":[\"code_generator\",\"architect\",\"tester\"],\"collaborationMetrics\":{\"totalAgents\":3,\"collaborationEfficiency\":0.92}}";
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to execute collaborative task: " << e.what() << std::endl;
+        return "{\"success\":false,\"error\":\"Failed to execute collaborative task\"}";
+    }
+}
+
+std::string FoundryEngineJNI::getAIAgentStatus(const std::string& agentId) {
+    try {
+        std::cout << "[JNI] Getting AI agent status for: " << agentId << std::endl;
+
+        // In real implementation, query the C++ AI system for agent status
+        return "{\"status\":\"active\",\"state\":\"idle\",\"taskProgress\":0.0,\"memoryUsage\":0.15}";
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to get AI agent status: " << e.what() << std::endl;
+        return "{\"status\":\"unknown\",\"error\":\"Failed to get status\"}";
+    }
+}
+
+std::string FoundryEngineJNI::getAvailableAIAgents() {
+    try {
+        std::cout << "[JNI] Getting available AI agents" << std::endl;
+
+        // Return available agents from C++ AI system
+        return "[{\"id\":\"code_generator\",\"name\":\"Code Generator\",\"capabilities\":[\"kotlin\",\"typescript\"]},{\"id\":\"architect\",\"name\":\"System Architect\",\"capabilities\":[\"design\",\"patterns\"]},{\"id\":\"tester\",\"name\":\"Automated Tester\",\"capabilities\":[\"testing\",\"quality\"]},{\"id\":\"platform_windows\",\"name\":\"Windows Specialist\",\"capabilities\":[\"directx\",\"windows\"]},{\"id\":\"orchestrator\",\"name\":\"Multi-Agent Orchestrator\",\"capabilities\":[\"coordination\",\"optimization\"]}]";
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to get available AI agents: " << e.what() << std::endl;
+        return "[]";
+    }
+}
+
+std::string FoundryEngineJNI::registerAIAgent(const std::string& agentConfigJson) {
+    try {
+        std::cout << "[JNI] Registering AI agent with config: " << agentConfigJson << std::endl;
+
+        // Parse agent config and register with C++ AI system
+        // In real implementation, create and initialize the agent
+        return "{\"success\":true,\"agentId\":\"custom_agent_001\",\"message\":\"Agent registered successfully\"}";
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to register AI agent: " << e.what() << std::endl;
+        return "{\"success\":false,\"error\":\"Failed to register agent\"}";
+    }
+}
+
+bool FoundryEngineJNI::sendAIAgentMessage(const std::string& fromAgentId, const std::string& toAgentId, const std::string& message, const std::string& messageType) {
+    try {
+        std::cout << "[JNI] Sending message from " << fromAgentId << " to " << toAgentId
+                  << " (type: " << messageType << "): " << message << std::endl;
+
+        // Route message through C++ AI system
+        // In real implementation, this would queue the message for delivery
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to send AI agent message: " << e.what() << std::endl;
+        return false;
+    }
+}
+
 void FoundryEngineJNI::dispose() {
     try {
         std::cout << "Disposing JNI bridge" << std::endl;
-        // In a real implementation, this would clean up the C++ engine
+        // In a real implementation, this would clean up the C++ engine and AI system
     } catch (const std::exception& e) {
         std::cerr << "Error during dispose: " << e.what() << std::endl;
     }

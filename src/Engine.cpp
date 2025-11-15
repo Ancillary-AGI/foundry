@@ -23,7 +23,24 @@ Engine& Engine::getInstance() {
 
 bool Engine::initialize() {
     // Initialize splash screen first for branding
+    SplashScreenConfig splashConfig;
+    splashConfig.enabled = true;
+    splashConfig.screenWidth = 1280; // Default resolution
+    splashConfig.screenHeight = 720;
+    splashConfig.duration = 3.0f; // 3 seconds
+    splashConfig.fadeInTime = 0.5f;
+    splashConfig.fadeOutTime = 1.0f;
+    splashConfig.showLogo = true;
+    splashConfig.showVersion = true;
+    splashConfig.showLoadingProgress = true;
+    splashConfig.backgroundColor = "#0F0F0F"; // Foundry dark background
+    splashConfig.textColor = "#FFFFFF";
+
     splashScreen_ = std::make_unique<SplashScreen>();
+    if (!splashScreen_->initialize(splashConfig)) {
+        std::cerr << "[Engine] Failed to initialize splash screen" << std::endl;
+        return false;
+    }
 
     world_ = std::make_unique<World>();
     scenes_ = std::make_unique<SceneManager>();
