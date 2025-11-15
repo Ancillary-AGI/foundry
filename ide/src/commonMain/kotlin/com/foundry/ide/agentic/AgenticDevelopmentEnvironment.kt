@@ -201,7 +201,6 @@ class AgenticDevelopmentEnvironment(
 
         // Cancel coroutine scope
         coroutineScope.cancel()
-
         isInitialized = false
         println("Agentic Development Environment shut down")
     }

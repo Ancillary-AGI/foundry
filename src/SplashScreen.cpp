@@ -12,6 +12,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <cmath>
 
 namespace FoundryEngine {
 
@@ -95,10 +96,48 @@ void SplashScreen::render() {
         return;
     }
 
+    // Get renderer from engine
+    FoundryEngine::Engine& engine = FoundryEngine::Engine::getInstance();
+    auto renderer = engine.getRenderer();
+    if (!renderer) {
+        // Fallback to console output for debugging
+        applyFadeEffect();
+
+        if (config_.showLogo) {
+            renderLogo();
+        }
+
+        if (config_.showVersion) {
+            renderVersionInfo();
+        }
+
+        if (config_.showLoadingProgress) {
+            renderProgressBar();
+        }
+
+        if (!customMessage_.empty()) {
+            renderCustomMessage();
+        }
+        return;
+    }
+
     applyFadeEffect();
 
-    // Clear background with configured color
-    // This would be done through the renderer system
+    // Set splash screen viewport (full screen)
+    renderer->setViewport(0, 0, config_.screenWidth, config_.screenHeight);
+
+    // Clear background with configured color - convert hex to RGB
+    std::string bgColor = config_.backgroundColor;
+    if (bgColor.length() >= 7 && bgColor[0] == '#') {
+        // Parse hex color (simplified)
+        float r = std::stoi(bgColor.substr(1, 2), nullptr, 16) / 255.0f;
+        float g = std::stoi(bgColor.substr(3, 2), nullptr, 16) / 255.0f;
+        float b = std::stoi(bgColor.substr(5, 2), nullptr, 16) / 255.0f;
+        renderer->clear(r, g, b, 1.0f);
+    } else {
+        // Default Foundry dark background
+        renderer->clear(0.11f, 0.11f, 0.11f, 1.0f);
+    }
 
     if (config_.showLogo) {
         renderLogo();
@@ -165,20 +204,99 @@ void SplashScreen::createDefaultBranding() {
 }
 
 void SplashScreen::renderLogo() {
-    if (!logoTexture_) {
-        // Render default Foundry text logo
+    FoundryEngine::Engine& engine = FoundryEngine::Engine::getInstance();
+    auto renderer = engine.getRenderer();
+
+    // Scale logo appropriately based on screen size
+    float scale = calculateLogoScale();
+
+    // Center logo on screen (positioned higher for Foundry branding effect)
+    Vector2 screenCenter(config_.screenWidth / 2.0f, config_.screenHeight / 2.0f - 100.0f * scale);
+
+    if (logoTexture_ && renderer) {
+        // Render actual logo texture if available
+        Vector2 logoSize(400 * scale, 200 * scale);
+        Vector2 logoPosition = screenCenter - logoSize * 0.5f;
+
+        // Render texture here - would use renderer->drawTexture()
+        // For now, render stylized text logo
+        renderDefaultLogo(screenCenter, scale);
+    } else {
+        // Render stylized Foundry Engine text logo
+        renderDefaultLogo(screenCenter, scale);
+    }
+}
+
+void SplashScreen::renderDefaultLogo(const Vector2& position, float scale) {
+    FoundryEngine::Engine& engine = FoundryEngine::Engine::getInstance();
+    auto renderer = engine.getRenderer();
+
+    if (!renderer) {
         std::cout << "[FoundryEngine] Rendering Foundry Engine Logo" << std::endl;
         return;
     }
 
-    // Renderer integration would go here
-    // Scale logo appropriately based on screen size
-    float scale = calculateLogoScale();
+    // Create stylized "Foundry Engine" text logo
+    // This would typically use a text rendering system or pre-rendered textures
 
-    // Center logo on screen
-    Vector2 screenCenter(config_.screenWidth / 2.0f, config_.screenHeight / 2.0f);
-    Vector2 logoSize(400 * scale, 200 * scale); // Default logo size
-    Vector2 logoPosition = screenCenter - logoSize * 0.5f;
+    float logoWidth = 600 * scale;
+    float logoHeight = 150 * scale;
+
+    // Position text elements
+    Vector2 foundryPos(position.x - logoWidth * 0.35f, position.y);
+    Vector2 enginePos(position.x + logoWidth * 0.15f, position.y);
+
+    // Render "FOUNDRY" in bold, metallic style (would use text rendering)
+    // Render "ENGINE" in sleek, futuristic style (would use text rendering)
+
+    // For now, draw simple geometric shapes to represent the logo
+    renderer->setColor(0.8f, 0.8f, 0.8f, opacity_); // Light grey with alpha
+
+    // Draw stylized "F"
+    Vector2 fStart = Vector2(foundryPos.x - 50 * scale, foundryPos.y);
+    // Vertical line of F
+    renderer->drawLine(fStart.x, fStart.y - 40 * scale, fStart.x, fStart.y + 40 * scale, 8 * scale);
+    // Horizontal lines of F
+    renderer->drawLine(fStart.x, fStart.y + 40 * scale, fStart.x + 30 * scale, fStart.y + 40 * scale, 4 * scale);
+    renderer->drawLine(fStart.x, fStart.y, fStart.x + 20 * scale, fStart.y, 4 * scale);
+
+    // Draw geometric Foundry symbol (stylized forge/spark)
+    Vector2 symbolCenter(foundryPos.x - 80 * scale, foundryPos.y);
+    float symbolSize = 20 * scale;
+
+    for (int i = 0; i < 5; ++i) {
+        float angle = i * (2 * 3.14159f / 5);
+        float x1 = symbolCenter.x + cos(angle) * symbolSize;
+        float y1 = symbolCenter.y + sin(angle) * symbolSize;
+        float x2 = symbolCenter.x + cos(angle + 3.14159f) * (symbolSize * 0.6f);
+        float y2 = symbolCenter.y + sin(angle + 3.14159f) * (symbolSize * 0.6f);
+
+        renderer->setColor(1.0f, 0.8f, 0.0f, opacity_ * 0.8f); // Golden sparks
+        renderer->drawLine(x1, y1, x2, y2, 2 * scale);
+    }
+
+    // Draw "ENGINE" text elements
+    renderer->setColor(0.9f, 0.9f, 0.9f, opacity_); // Slightly brighter
+
+    // Simple representation - in real implementation would use actual text rendering
+    std::cout << "[FoundryEngine] Displaying Foundry Engine Logo" << std::endl;
+    std::cout << "          _______  _______  _______  _______  _______           " << std::endl;
+    std::cout << "         |       ||       ||       ||       ||       |          " << std::endl;
+    std::cout << "         |   ____||   ____||    ___||    ___||    ___|          " << std::endl;
+    std::cout << "         |  |__  ||  |__  ||   |___ |   |___ |   |___           " << std::endl;
+    std::cout << "         |   __| ||   __| ||    ___||    ___||    ___|          " << std::endl;
+    std::cout << "         |  |    ||  |    ||   |___ |   |___ |   |___           " << std::endl;
+    std::cout << "         |__|    ||__|    ||_______||_______||_______|          " << std::endl;
+    std::cout << "                                                               " << std::endl;
+    std::cout << "  _______  _______  _______  _______  ______    _______  ______  " << std::endl;
+    std::cout << " |       ||       ||       ||       ||    _ |  |       ||      | " << std::endl;
+    std::cout << " |   ____||    ___||   ____||    ___||   | ||  |   ____||  ____| " << std::endl;
+    std::cout << " |  |     |   |___ |  |__  ||   |___ |   |_||_ |  |_____|   __|__" << std::endl;
+    std::cout << " |  |     |    ___||   __| ||    ___||    __  ||     __|   |____ " << std::endl;
+    std::cout << " |  |____ |   |___ |  |____ |   |___ |   |  | ||   |____|       | " << std::endl;
+    std::cout << " |_______||_______||_______|| _______||___|  |_||_______|_______| " << std::endl;
+    std::cout << "                       |       |                                " << std::endl;
+    std::cout << "                       |_______|                                " << std::endl;
 }
 
 void SplashScreen::renderVersionInfo() {
