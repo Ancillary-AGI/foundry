@@ -125,11 +125,28 @@ void Engine::render() {
     renderer_->beginFrame();
 
     // Render splash screen first if active (takes priority over regular UI)
+    // This is optimized to skip regular rendering during splash screen display for better performance
     if (splashScreen_ && splashScreen_->isActive()) {
         splashScreen_->render();
+        // Skip rendering other elements during splash screen for efficiency
     } else {
-        // Render regular UI and game content
+        // Render game content and regular UI
+        if (scenes_->getActiveScene()) {
+            scenes_->getActiveScene()->render();
+        }
+
+        // Render world/entities
+        if (world_) {
+            world_->render();
+        }
+
+        // Render UI on top of game content
         ui_->render();
+
+        // Update profiler frame stats
+        if (profiler_) {
+            profiler_->endFrame();
+        }
     }
 
     renderer_->endFrame();
