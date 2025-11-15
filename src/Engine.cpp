@@ -1,6 +1,7 @@
 #include "../include/GameEngine/core/Engine.h"
 #include "../include/GameEngine/core/World.h"
 #include "../include/GameEngine/core/Scene.h"
+#include "../include/GameEngine/core/SplashScreen.h"
 #include "../include/GameEngine/graphics/Renderer.h"
 #include "../include/GameEngine/systems/AudioSystem.h"
 #include "../include/GameEngine/systems/InputSystem.h"
@@ -11,6 +12,7 @@
 #include "../include/GameEngine/systems/NetworkSystem.h"
 #include "../include/GameEngine/systems/ProfilerSystem.h"
 #include <thread>
+#include <iostream>
 
 namespace FoundryEngine {
 
@@ -20,6 +22,9 @@ Engine& Engine::getInstance() {
 }
 
 bool Engine::initialize() {
+    // Initialize splash screen first for branding
+    splashScreen_ = std::make_unique<SplashScreen>();
+
     world_ = std::make_unique<World>();
     scenes_ = std::make_unique<SceneManager>();
     assets_ = std::make_unique<DefaultAssetManager>();
@@ -94,17 +99,23 @@ void Engine::run() {
 }
 
 void Engine::update(float deltaTime) {
+    // Update splash screen first if active (shows progress during loading)
+    if (splashScreen_ && splashScreen_->isActive()) {
+        splashScreen_->update(deltaTime);
+        splashScreen_->setLoadingProgress(0.5f); // Example progress (would be based on actual loading)
+    }
+
     input_->update();
     network_->update();
     scripting_->update(deltaTime);
     physics_->step(deltaTime);
     audio_->update();
-    
+
     if (scenes_->getActiveScene()) {
         scenes_->getActiveScene()->update(deltaTime);
     }
     scenes_->update(deltaTime);
-    
+
     world_->update(deltaTime);
     ui_->update(deltaTime);
     assets_->update();
@@ -112,7 +123,15 @@ void Engine::update(float deltaTime) {
 
 void Engine::render() {
     renderer_->beginFrame();
-    ui_->render();
+
+    // Render splash screen first if active (takes priority over regular UI)
+    if (splashScreen_ && splashScreen_->isActive()) {
+        splashScreen_->render();
+    } else {
+        // Render regular UI and game content
+        ui_->render();
+    }
+
     renderer_->endFrame();
     renderer_->present();
 }
@@ -141,6 +160,7 @@ void Engine::shutdown() {
     assets_.reset();
     world_.reset();
     profiler_.reset();
+    splashScreen_.reset();
 }
 
 } // namespace FoundryEngine

@@ -78,6 +78,7 @@ class SceneManager;
 class UIManager;
 class NetworkManager;
 class ProfileManager;
+class SplashScreen;
 
 /**
  * @class Engine
@@ -383,6 +384,21 @@ public:
      */
     ProfileManager* getProfiler() const { return profiler_.get(); }
 
+    /**
+     * @brief Get the splash screen system for Foundry branding
+     * @return Pointer to the splash screen instance, or nullptr if not initialized
+     *
+     * Provides access to the splash screen system responsible for:
+     * - Displaying Foundry Engine branding at startup
+     * - Loading progress indication
+     * - Version information display
+     * - Custom messages and animations
+     *
+     * @note Returns nullptr if engine not initialized
+     * @note Splash screen is created during initialize() and destroyed during shutdown()
+     */
+    SplashScreen* getSplashScreen() const { return splashScreen_.get(); }
+
     // Time management
 
     /**
@@ -550,6 +566,7 @@ private:
     std::unique_ptr<UIManager> ui_;             ///< User interface rendering and interaction
     std::unique_ptr<NetworkManager> network_;   ///< Multiplayer networking and synchronization
     std::unique_ptr<ProfileManager> profiler_;  ///< Performance monitoring and optimization
+    std::unique_ptr<SplashScreen> splashScreen_; ///< Foundry branding and splash screen system
 
     // Engine state
     bool running_ = false;                       ///< Whether the main game loop is running
